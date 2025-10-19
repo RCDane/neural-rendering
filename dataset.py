@@ -37,14 +37,13 @@ class NeuralBRDFDataset(Dataset):
 
     def __init__(self,
                  npz_path: str = "bsdf_rgb_samples_extended.npz",
-                 return_dict: bool = True,
-                 device: str | torch.device | None = None):
+                 return_dict: bool = True):
         super().__init__()
+        self.device = None
         if not os.path.isfile(npz_path):
             raise FileNotFoundError(f"Dataset file not found: {npz_path}")
         raw = load_sample_file(npz_path)
         self.return_dict = return_dict
-        self.device = torch.device(device) if device else None
 
         def _req(key: str):
             if key not in raw:

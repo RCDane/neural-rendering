@@ -53,7 +53,7 @@ def epoch_step(neuralBSDF, dataloader, optimizer, accelerator, is_training = Tru
         neuralBSDF.train()
     else:
         neuralBSDF.eval()
-    for b in tqdm(dataloader, desc="Training" if is_training else "Validation", unit="batch", total =len(dataloader), mininterval=2.0):
+    for b in tqdm(dataloader, desc="Training" if is_training else "Validation", unit="batch", total=len(dataloader)):
         loss = training_step(neuralBSDF, b)
         if is_training:
             optimizer.zero_grad()
@@ -69,8 +69,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Train neural BSDF model")
     parser.add_argument('--epochs', type=int, default=10, help='Number of epochs to train')
     parser.add_argument('--batch-size', type=int, default=1024, help='Batch size')
-    parser.add_argument('--lr', type=float, default=5e-4, help='Learning rate')
+    parser.add_argument('--lr', type=float, default=2e-3, help='Learning rate')
     parser.add_argument('--weight-decay', type=float, default=1e-5, help='Weight decay')
+    parser.add_argument('--num-workers', type=int, default=4, help='Number of data loader workers')
     parser.add_argument('--hidden-dim', type=int, default=32, help='Hidden layer dimension for BSDF model')
     parser.add_argument('--data', type=str, default='bsdf_samples.npz', help='Path to dataset npz')
     parser.add_argument('--save-dir', type=str, default='checkpoints', help='Directory to save checkpoints')
@@ -103,19 +104,23 @@ def save_checkpoint(model, optimizer, epoch, training_loss, validation_loss, pat
         json.dump(meta, f, indent=2)
     print(f"[checkpoint] Saved: {path}")
 
+import transformers
+
 
 def main():
     # set cuda backend
-    
+    import dataset_optimized
     args = parse_args()
-    training_set, validation_set, _ = dataset.create_dataloaders(
+    training_set, validation_set, _ = dataset_optimized.create_dataloaders_optimized(
         path=args.data,
         batch_size=args.batch_size,
-        num_workers=12,
+        num_workers=args.num_workers,
         pin_memory=True,
+        use_batch_sampler=True,
     )
     print(len(training_set), "training samples")
     print(len(validation_set), "validation samples")
+
 
 
 
@@ -140,18 +145,25 @@ def main():
     textureCompression = TextureEncoder(input_dim=3, hidden_layer_dim=64, output_dim=16)
     optimizer = torch.optim.AdamW(neuralBSDF.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     # Prepare dataloaders with accelerator (assuming training_set/validation_set implement iterable of dict tensors already on CPU; accelerator will move as needed)
-    neuralBSDF, optimizer, training_set, validation_set = accelerator.prepare(neuralBSDF, optimizer, training_set, validation_set)
+    
+    neuralBSDF, optimizer, training_set, validation_set,  = accelerator.prepare(neuralBSDF, optimizer, training_set, validation_set)
+
+    
+    #learning rate
+
 
     ensure_dir(args.save_dir)
     best_val = float('inf')
 
     epoch_iter = range(args.epochs)
     if accelerator.is_main_process:
-        epoch_iter = tqdm(epoch_iter)
+        epoch_iter = tqdm(epoch_iter, desc="Epochs", unit="epoch")
     for epoch in epoch_iter:
         epoch_index = epoch + 1
         training_loss = epoch_step(neuralBSDF, training_set, optimizer, accelerator, is_training=True)
         validation_loss = epoch_step(neuralBSDF, validation_set, optimizer, accelerator, is_training=False)
+        training_loss /= args.batch_size
+        validation_loss /= args.batch_size
         if accelerator.is_main_process and (epoch_index % args.log_every == 0):
             print(f"Epoch {epoch_index}/{args.epochs} - Training Loss: {training_loss:.6f}, Validation Loss: {validation_loss:.6f}")
 
