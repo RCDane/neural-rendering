@@ -1,0 +1,9 @@
+/bsdf_rgb_samples_extended.npz
+/bsdf_rgb_samples_extended_vec.npz
+/bsdf_samples.npz
+/checkpoints
+/neural_render.exr
+/neural_render.png
+/render.exr
+/render.png
+/__pycache__
