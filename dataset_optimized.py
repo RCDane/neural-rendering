@@ -31,7 +31,8 @@ class NeuralBRDFDatasetOptimized(Dataset):
 
     Required keys:
       pos, normal, uv, wi_local, wo_local, f, pdf,
-      tangent, normal_map, shading_normal, albedo, roughness, metallic
+      tangent, normal_map, shading_normal, albedo, roughness, metallic,
+      ndotl, ndotv, ndoth, ldoth   # (local-frame scalar features)
 
     Optimizations:
     1. Support for batch indexing via slices and lists
@@ -84,6 +85,13 @@ class NeuralBRDFDatasetOptimized(Dataset):
         albedo         = torch.from_numpy(_req("albedo")).float()
         roughness_raw  = torch.from_numpy(_req("roughness")).float()
         metallic_raw   = torch.from_numpy(_req("metallic")).float()
+
+        # New scalar local-frame features
+        ndotl = torch.from_numpy(_req("ndotl")).float()
+        ndotv = torch.from_numpy(_req("ndotv")).float()
+        ndoth = torch.from_numpy(_req("ndoth")).float()
+        ldoth = torch.from_numpy(_req("ldoth")).float()
+
         roughness = roughness_raw.unsqueeze(-1) if roughness_raw.ndim == 1 else roughness_raw
         metallic  = metallic_raw.unsqueeze(-1) if metallic_raw.ndim == 1 else metallic_raw
 
@@ -116,8 +124,14 @@ class NeuralBRDFDatasetOptimized(Dataset):
         self.cos_o = cos_o
         self.dot_wi_wo = dot_wi_wo
         self.sample_weight = torch.ones_like(pdf)
+        self.ndotl = ndotl
+        self.ndotv = ndotv
+        self.ndoth = ndoth
+        self.ldoth = ldoth
 
-        self.input_dim = 31
+        # Input dim now reflects the model features actually used:
+        # ndotl(1)+ndotv(1)+ndoth(1)+ldoth(1)+albedo(3)+roughness(1)+metallic(1) = 9
+        self.input_dim = 9
         self.target_dim = 3
         self.N = f.shape[0]
 
@@ -135,7 +149,7 @@ class NeuralBRDFDatasetOptimized(Dataset):
         self.device = device
         for name in ("pos","normal","uv","wi_local","wo_local","f","pdf","tangent",
                      "normal_map","shading_normal","albedo","roughness","metallic",
-                     "sample_weight"):
+                     "sample_weight","ndotl","ndotv","ndoth","ldoth"):
             setattr(self, name, getattr(self, name).to(device))
         
         if self.preload_features:
@@ -197,6 +211,10 @@ class NeuralBRDFDatasetOptimized(Dataset):
             "f": self.f[idx],
             "pdf": self.pdf[idx],
             "weight": self.sample_weight[idx],
+            "ndotl": self.ndotl[idx],
+            "ndotv": self.ndotv[idx],
+            "ndoth": self.ndoth[idx],
+            "ldoth": self.ldoth[idx],
         }
         
         # Cache if enabled and we have space
@@ -208,7 +226,6 @@ class NeuralBRDFDatasetOptimized(Dataset):
 
     def _get_slice_items(self, idx: slice):
         """Get a slice of items efficiently."""
-        # Get derived features
         if self.preload_features:
             h = self.h[idx]
             cos_i = self.cos_i[idx]
@@ -238,14 +255,17 @@ class NeuralBRDFDatasetOptimized(Dataset):
             "f": self.f[idx],
             "pdf": self.pdf[idx],
             "weight": self.sample_weight[idx],
+            "ndotl": self.ndotl[idx],
+            "ndotv": self.ndotv[idx],
+            "ndoth": self.ndoth[idx],
+            "ldoth": self.ldoth[idx],
         }
 
     def _get_list_items(self, idx):
         """Get items from a list of indices."""
         if isinstance(idx, torch.Tensor):
             idx = idx.tolist()
-        
-        # Get derived features
+
         if self.preload_features:
             h = self.h[idx]
             cos_i = self.cos_i[idx]
@@ -275,6 +295,10 @@ class NeuralBRDFDatasetOptimized(Dataset):
             "f": self.f[idx],
             "pdf": self.pdf[idx],
             "weight": self.sample_weight[idx],
+            "ndotl": self.ndotl[idx],
+            "ndotv": self.ndotv[idx],
+            "ndoth": self.ndoth[idx],
+            "ldoth": self.ldoth[idx],
         }
 
     def get_batch(self, indices: Union[slice, List[int]], batch_size: int = None):

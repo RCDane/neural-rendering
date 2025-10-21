@@ -1,6 +1,115 @@
+from unittest import case
 import torch
+import json
+import os
 
 
+def save_checkpoint(model, optimizer, epoch, training_loss, validation_loss, input_shape, path):
+    payload = {
+        'epoch': epoch,
+        'training_loss': training_loss,
+        'validation_loss': validation_loss,
+        'input_shape': input_shape,
+        'hidden_dim' : model.hidden_dim,
+        'model_state': model.state_dict(),
+        'optimizer_state': optimizer.state_dict()
+    }
+    torch.save(payload, path)
+
+    # Write sidecar JSON for quick inspection
+    meta_path = path + '.json'
+    meta = {k: payload[k] for k in ['epoch', 'training_loss', 'validation_loss','input_shape', 'hidden_dim']}
+    with open(meta_path, 'w') as f:
+        json.dump(meta, f, indent=2)
+    print(f"[checkpoint] Saved: {path}")
+
+
+def load_checkpoint(model, optimizer, path):
+    if not os.path.isfile(path):
+        print(f"[checkpoint] File not found: {path}")
+        return 0, 0.0, 0.0
+    payload = torch.load(path, map_location=torch.device('cpu'))
+    model.load_state_dict(payload['model_state'])
+    optimizer.load_state_dict(payload['optimizer_state'])
+    epoch = payload.get('epoch', 0)
+    training_loss = payload.get('training_loss', 0.0)
+    validation_loss = payload.get('validation_loss', 0.0)
+    print(f"[checkpoint] Loaded: {path} (epoch {epoch})")
+    return epoch, training_loss, validation_loss
+
+import numpy as np
+
+def parse_model_input_values(input_sizes: list[tuple[str, int]], input_values: dict[str, any], batch_size: int) -> torch.Tensor:
+    """
+    Build input tensor in declared order (name,size) using batch dict.
+    Accepts feature tensors shaped (B,F) or (1,B,F) and normalizes to (B,F).
+    """
+    device = None
+    for v in input_values.values():
+        if isinstance(v, torch.Tensor):
+            device = v.device
+            break
+
+    def _norm_vec(t: torch.Tensor) -> torch.Tensor:
+        # Convert (1,B,F) -> (B,F)
+        if t is not None and t.dim() == 3 and t.shape[0] == 1:
+            t = t.squeeze(0)
+        return t
+
+    wi = _norm_vec(input_values.get('wi_local'))
+    wo = _norm_vec(input_values.get('wo_local'))
+    normal = _norm_vec(input_values.get('shading_normal'))
+
+    if wi is None or wo is None or normal is None:
+        raise KeyError("Required keys: wi_local, wo_local, shading_normal")
+
+    cols = []
+    for name, size in input_sizes:
+        val = input_values.get(name)
+        if isinstance(val, torch.Tensor):
+            val = _norm_vec(val)
+            # Ensure (B,size)
+            if val.dim() == 1 and val.shape[0] == batch_size:
+                val = val.unsqueeze(-1)
+            elif val.dim() > 2:
+                val = val.view(batch_size, -1)
+        elif isinstance(val, (list, tuple, np.ndarray)):
+            val = torch.as_tensor(val, dtype=torch.float32, device=device)
+            if val.dim() == 1:
+                # Broadcast scalar feature vector to batch
+                if val.shape[0] == size:
+                    val = val.unsqueeze(0).expand(batch_size, -1)
+                else:
+                    raise ValueError(f"List/array for '{name}' has length {val.shape[0]} != expected {size}")
+        elif isinstance(val, (int, float)):
+            val = torch.full((batch_size, size), float(val), dtype=torch.float32, device=device)
+        else:
+            raise TypeError(f"Unsupported type for feature '{name}'")
+        cols.append(val)
+    input_tensor = torch.cat(cols, dim=-1)
+    return input_tensor
+# ...existing code...
+
+
+# test parsing
+def test_parse_model_input_values():
+    input_size = [('ndotl', 1), ('ndotv', 1), ('albedo', 3), ('roughness', 1)]
+    batch_size = 2
+    wi_local = torch.tensor([[[0.0, 0.0, 1.0], [0.0, 1.0, 0.0]]])
+    wo_local = torch.tensor([[[0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]])
+    normal = torch.tensor([[[0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]])
+    albedo = torch.tensor([[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])
+    roughness = torch.tensor([[[0.5], [0.8]]])
+    input_values = {
+        'wi_local': wi_local,
+        'wo_local': wo_local,
+        'shading_normal': normal,
+        'albedo': albedo,
+        'roughness': roughness
+    }
+    input_tensor = parse_model_input_values(input_size, input_values, batch_size)
+    print(input_tensor)
+# test_parse_model_input_values()
 
 class TextureEncoder(torch.nn.Module):
 
@@ -19,6 +128,7 @@ class TextureEncoder(torch.nn.Module):
 class SimpleNeuralBSDF(torch.nn.Module):
     def __init__(self, input_layer_dim, hidden_layer_dim, output_dim):
         super().__init__()
+        self.hidden_dim = hidden_layer_dim
         self.fc1 = torch.nn.Linear(input_layer_dim, hidden_layer_dim)
         # self.bn1 = torch.nn.BatchNorm1d(hidden_layer_dim)
         self.fc2 = torch.nn.Linear(hidden_layer_dim, hidden_layer_dim)

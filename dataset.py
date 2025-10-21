@@ -62,8 +62,14 @@ class NeuralBRDFDataset(Dataset):
         normal_map     = torch.from_numpy(_req("normal_map")).float()
         shading_normal = torch.from_numpy(_req("shading_normal")).float()
         albedo         = torch.from_numpy(_req("albedo")).float()
+        normal         = torch.from_numpy(_req("normal")).float() 
         roughness_raw  = torch.from_numpy(_req("roughness")).float()
         metallic_raw   = torch.from_numpy(_req("metallic")).float()
+        ndotl = torch.from_numpy(_req("ndotl")).float()
+        ndotv = torch.from_numpy(_req("ndotv")).float()
+        ndoth = torch.from_numpy(_req("ndoth")).float()
+        ldoth = torch.from_numpy(_req("ldoth")).float()
+
         roughness = roughness_raw.unsqueeze(-1) if roughness_raw.ndim == 1 else roughness_raw
         metallic  = metallic_raw.unsqueeze(-1) if metallic_raw.ndim == 1 else metallic_raw
 
@@ -92,7 +98,10 @@ class NeuralBRDFDataset(Dataset):
         self.cos_o = cos_o
         self.dot_wi_wo = dot_wi_wo
         self.sample_weight = torch.ones_like(pdf)
-
+        self.ndotl = ndotl
+        self.ndotv = ndotv
+        self.ndoth = ndoth
+        self.ldoth = ldoth
         self.input_dim = 31
         self.target_dim = 3
         self.N = f.shape[0]
@@ -126,7 +135,18 @@ class NeuralBRDFDataset(Dataset):
             "f": self.f[idx],
             "pdf": self.pdf[idx],
             "weight": self.sample_weight[idx],
+            "ndotl": self.ndotl[idx],
+            "ndotv": self.ndotv[idx],
+            "ndoth": self.ndoth[idx],
+            "ldoth": self.ldoth[idx],
         }
+
+
+
+# class NeuralBRDFOnlineDataset(Dataset):
+#     def __init__(self, ):
+#         super().__init__()
+        
 
 
 # ------------------------------------------------------------

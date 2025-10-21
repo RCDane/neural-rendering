@@ -114,6 +114,10 @@ def generate_data(n: int, chunk: int = 16384) -> dict:
     albedo_list = []
     rough_list = []
     metal_list = []
+    ndotl_list = []
+    ndotv_list = []
+    ndoth_list = []
+    ldoth_list = []
 
     produced = 0
     while produced < n:
@@ -146,9 +150,17 @@ def generate_data(n: int, chunk: int = 16384) -> dict:
         f_val = bsdf.eval(ctx, si, wo_local)
         pdf_val = bsdf.pdf(ctx, si, wo_local)
 
+        ndotl = dr.clip(wi_local.z, 0.0, 1.0)
+        ndotv = dr.clip(wo_local.z, 0.0, 1.0)
+        h = dr.normalize(wi_local + wo_local)
+        ndoth = dr.clip(h.z, 0.0, 1.0)
+        ldoth = dr.clip(dr.dot(wi_local, h), 0.0, 1.0)
+        
         # Schedule & evaluate to make results ready for host transfer
-        dr.schedule(f_val, pdf_val, si.p, si.n, si.uv, wi_local, wo_local, si.sh_frame.s)
+        dr.schedule(f_val, pdf_val, si.p, si.n, si.uv, wi_local, wo_local, si.sh_frame.s, ndotl, ndotv, ndoth, ldoth)
         dr.eval()
+        
+        
 
         # Texture sampling (vectorized). Each returns a drjit array.
         nm = _normal_tex.eval(si)       # (m, 3)
@@ -198,7 +210,14 @@ def generate_data(n: int, chunk: int = 16384) -> dict:
         pdf_host = np.array(pdf_val)  # already (m,)
         tangent_host = _to_rows(np.array(si.sh_frame.s), 3, m)
         bitangent_host = _to_rows(np.array(si.sh_frame.t), 3, m)  # second axis from frame
+        def _scalar_to_col(a):
+            a_np = np.array(a).reshape(-1)
+            return a_np[:, None]
 
+        ndotl_list.append(_scalar_to_col(ndotl))
+        ndotv_list.append(_scalar_to_col(ndotv))
+        ndoth_list.append(_scalar_to_col(ndoth))
+        ldoth_list.append(_scalar_to_col(ldoth))
         nm_host = _to_rows(np.array(nm), 3, m)
         bc_host = _to_rows(np.array(bc), 3, m)
         # Roughness & metallic: take first channel; ensure shape (m,)
@@ -274,6 +293,10 @@ def generate_data(n: int, chunk: int = 16384) -> dict:
         'albedo': cat(albedo_list),
         'roughness': cat(rough_list),
         'metallic': cat(metal_list),
+        'ndotl': cat(ndotl_list),
+        'ndotv': cat(ndotv_list),
+        'ndoth': cat(ndoth_list),
+        'ldoth': cat(ldoth_list),
     }
     return data
 
@@ -360,7 +383,6 @@ def run_invariants(data: dict) -> dict:
     metal = data['metallic']
     metrics['metallic_min'] = float(np.min(metal))
     metrics['metallic_max'] = float(np.max(metal))
-
     return metrics
 
 
