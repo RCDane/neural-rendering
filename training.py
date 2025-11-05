@@ -225,7 +225,6 @@ assign_free_gpus(2000, max_gpus=1)
 
 def main():
     # set cuda backend
-    import dataset_optimized
     args = parse_args()
     
     

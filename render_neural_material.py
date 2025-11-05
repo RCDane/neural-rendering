@@ -1,12 +1,13 @@
 import mitsuba as mi
-mi.set_variant('scalar_rgb')  # CPU variant - more stable
 import drjit as dr
-dr.set_flag(dr.JitFlag.SymbolicLoops, False)
-dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+mi.set_variant('cuda_ad_rgb')  # CPU variant - more stable
 
+# dr.set_flag(dr.JitFlag.SymbolicLoops, False)
+# dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+# dr.set_flag(dr.JitFlag.Debug, True)
 # dr.set_backend(dr.JitBackend.)
-dr.set_flag(dr.JitFlag.Debug, True)
-
+# dr.set_flag(dr.JitFlag.Debug, True)
+# dr.set_flag(dr.JitFlag.)
 import custom_bsdf
 
 obj_file = "data/lubricant_spray_8k.obj"
@@ -71,7 +72,7 @@ scene = mi.load_dict({
         
     }
 })
-
-img = mi.render(scene, spp=16)
+# dr.set_backend(dr.JitBackend.Invalid)
+img = mi.render(scene, spp=2)
 mi.util.write_bitmap('render.exr', img)
 mi.util.write_bitmap('render.png', img)  # quick LDR preview

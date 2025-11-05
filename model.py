@@ -130,11 +130,9 @@ class SimpleNeuralBSDF(torch.nn.Module):
         super().__init__()
         self.hidden_dim = hidden_layer_dim
         self.fc1 = torch.nn.Linear(input_layer_dim, hidden_layer_dim)
-        # self.bn1 = torch.nn.BatchNorm1d(hidden_layer_dim)
         self.fc2 = torch.nn.Linear(hidden_layer_dim, hidden_layer_dim)
         self.fc3 = torch.nn.Linear(hidden_layer_dim, output_dim)
         self.activation = torch.nn.ReLU()
-        # self.output_activation = torch.nn.Sigmoid()  # Assuming BSDF values are in [0, 1]   
 
     def forward(self, x):
         x = self.fc1(x)
@@ -144,3 +142,70 @@ class SimpleNeuralBSDF(torch.nn.Module):
         x = self.activation(x)
         x = self.fc3(x)
         return x
+
+
+import drjit as dr
+import drjit.nn as dnn
+
+
+class TorchToDRWrapper(dr.CustomOp):
+    def __init__(self, model: torch.nn.Module, input_size: int, target_dtype):
+        super().__init__()
+        self.model = model
+        self.input_size = input_size
+        self.target_dtype = target_dtype
+        self.weights, self.drjit_model = self.wrap(model)
+    def wrap(self, model:torch.nn.Module): 
+        traced = torch.fx.symbolic_trace(model)
+        drjit_modules = []
+        # Map from module names to actual modules
+        module_dict = dict(model.named_modules())
+        for node in traced.graph.nodes:
+            if node.op == 'call_module':
+                torch_module = module_dict[node.target]
+                if isinstance(torch_module, torch.nn.Linear):
+                    drjit_module = dnn.Linear(torch_module.in_features, torch_module.out_features, bias=torch_module.bias is not None)
+                    drjit_module.weights = self.target_dtype(torch_module.weight.detach().cpu().numpy())
+                    if torch_module.bias is not None:
+                        drjit_module.bias = self.target_dtype(torch_module.bias.detach().cpu().numpy())
+                    else:
+                        drjit_module.bias = self.target_dtype(np.zeros((torch_module.out_features,), dtype=np.float32))
+                    drjit_modules.append(drjit_module)
+                elif isinstance(torch_module, torch.nn.ReLU):
+                    drjit_modules.append(dnn.ReLU())
+        self.drjit_modules = drjit_modules
+        drjit_model = dnn.Sequential(*drjit_modules)
+
+        return dnn.pack(drjit_model, layout='inference')
+    def eval(self, input):
+        coopVec_input = dnn.CoopVec(input)
+        packed_input = self.drjit_model(coopVec_input)
+        return packed_input
+    
+    def print_weights(self):
+        for w in self.drjit_modules:
+            if isinstance(w, dnn.Linear):
+                print(w.__str__())
+                print(w.weights)
+                print(w.bias)
+            elif isinstance(w, dnn.ReLU):
+                print(w.__str__())
+                print("ReLU Layer")
+    
+    def __str__(self):
+        return f"TorchToDRWrapper(drjit_model={self.drjit_model})"
+
+    
+if __name__ == "__main__":
+    model = SimpleNeuralBSDF(input_layer_dim=3, hidden_layer_dim=2, output_dim=2)
+    for param in model.parameters():
+        print(param)
+    # print(model)
+    wrapper = TorchToDRWrapper(model, input_size=1, target_dtype=dr.auto.ad.TensorXf16)
+    wrapper.print_weights()
+    input = torch.randn((1,3))
+    output = model(input)
+    print("Torch output:", output)
+    dr_input = wrapper.target_dtype(input.detach().cpu().numpy())
+    dr_output = dr.auto.ad.TensorXf16(wrapper.eval(dr_input))
+    print("DR output:", dr_output)

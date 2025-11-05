@@ -3,11 +3,125 @@ import torch
 import numpy as np
 import mitsuba as mi
 import drjit as dr  
-dr.set_flag(dr.JitFlag.SymbolicLoops, False)
-dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+# dr.set_flag(dr.JitFlag.SymbolicLoops, False)
+# dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
 import json
-from model import SimpleNeuralBSDF
+from model import SimpleNeuralBSDF, TorchToDRWrapper
 # mi.set_variant("scalar_rgb")
+
+def wrap_torch_module(module: torch.nn.Module,
+                      target_dtype=None,
+                      preserve_requires_grad: bool = False):
+    """
+    Wrap a torch.nn.Module so it can be called from Dr.Jit with
+    automatic conversion + full forward/reverse AD interoperability.
+
+    Parameters
+    ----------
+    module : torch.nn.Module
+        The PyTorch module to wrap. It can be on CPU or CUDA; inputs
+        will be moved to its device automatically.
+    target_dtype : optional
+        A Dr.Jit array/tensor type you want outputs cast to. If None,
+        the natural converted Dr.Jit types are returned.
+        (E.g. dr.cuda.TensorXf, dr.llvm.TensorXf16, etc.)
+    preserve_requires_grad : bool
+        If True, torch inputs that require grad will keep that flag.
+        Otherwise, they will be treated as leaf tensors without grad.
+
+    Returns
+    -------
+    wrapped_fn : callable
+        A function that takes Dr.Jit arrays (or PyTrees thereof) and
+        returns Dr.Jit arrays. It participates in Dr.Jit autodiff:
+        - reverse-mode (dr.backward)
+        - forward-mode (dr.forward)
+        - combined if needed.
+
+    Usage
+    -----
+    torch_model = MyTorchNet().cuda()
+    wrapped = wrap_torch_module(torch_model)
+
+    # Dr.Jit side
+    x = dr.cuda.TensorXf([1.0, 2.0, 3.0])
+    dr.enable_grad(x)
+    y = wrapped(x)
+    dr.backward(y)
+    grad_x = dr.grad(x)
+
+    Notes
+    -----
+    - Only pass Dr.Jit arrays/tensors (or tuples/lists/dicts thereof) as inputs.
+    - For forward-mode AD, PyTorch has a limitation when passing Python
+      objects that are not tensors (see PyTorch issue #117491 referenced
+      in Dr.Jit interop docs).
+    - If you need multiple inputs, just call wrapped(a, b, c, ...).
+    - Outputs can be tuples/dicts; they will map back into Dr.Jit PyTrees.
+    """
+
+    # Ensure module is in eval mode by default (you can change later).
+    module.eval()
+
+    # Capture device (CPU or CUDA) to move inputs there.
+    device = next(module.parameters(), torch.tensor(0)).device
+
+    @dr.wrap(source='drjit', target='torch') 
+    def _wrapped(*args, **kwargs):
+        torch_args = []
+        for a in args:
+            # a arrives as torch.Tensor already (due to interop), but ensure device/dtype alignment.
+            if isinstance(a, torch.Tensor):
+                t = a.to(device)
+                if preserve_requires_grad and hasattr(a, 'requires_grad'):
+                    t.requires_grad = a.requires_grad
+                torch_args.append(t)
+            else:
+                torch_args.append(a)
+
+        torch_kwargs = {}
+        for k, v in kwargs.items():
+            if isinstance(v, torch.Tensor):
+                tv = v.to(device)
+                if preserve_requires_grad and hasattr(v, 'requires_grad'):
+                    tv.requires_grad = v.requires_grad
+                torch_kwargs[k] = tv
+            else:
+                torch_kwargs[k] = v
+
+        out = module(*torch_args, **torch_kwargs)
+
+        # Optionally cast outputs (after conversion back to Dr.Jit).
+        # Interop will convert torch tensors → Dr.Jit arrays automatically;
+        # we just post-process if target_dtype is specified.
+        if target_dtype is None:
+            return out
+
+        def _cast_leaf(x):
+            if dr.is_array_v(type(x)):
+                # If already target_dtype, keep; else cast elementwise
+                if type(x) is target_dtype:
+                    return x
+                # For Tensor target types, construct via target_dtype(x)
+                try:
+                    return target_dtype(x)
+                except Exception:
+                    # Fallback: create new array
+                    return target_dtype([xi for xi in x])
+            return x
+
+        # Handle possible PyTree outputs
+        if isinstance(out, (list, tuple)):
+            return type(out)(_cast_leaf(o) for o in out)
+        elif isinstance(out, dict):
+            return {k: _cast_leaf(v) for k, v in out.items()}
+        else:
+            return _cast_leaf(out)
+
+    return _wrapped
+
+
+
 
 class NeuralBSDFEvaluator(dr.CustomOp):
     """
@@ -142,10 +256,14 @@ class NeuralBSDF(mi.BSDF):
             mi.Log(mi.LogLevel.Error, f"[NeuralBSDF] Invalid state dict format in: {path}")
             return
         
-        device_str = 'cuda' if 'cuda' in mi.variant() else 'cpu'
-
-        self.model = SimpleNeuralBSDF(input_size, self.hidden_dim, output_size).to(device_str)
-        self.model.eval()
+        # device_str = 'cuda' if 'cuda' in mi.variant() else 'cpu'
+        # print(f"[NeuralBSDF] Loading model on device: {device_str}")
+        self.model = SimpleNeuralBSDF(input_size, self.hidden_dim, output_size)
+        self.model.load_state_dict(sd['model_state'])
+        self.wrapped_model = TorchToDRWrapper(self.model,3, target_dtype=dr.auto.ad.TensorXf16)
+        # self.wrapped_model = wrap_torch_module(self.model, target_dtype=dr.auto.TensorXf)
+        
+        # self.model.eval()
 
         # Instantiate the custom operator that wraps our model
         # self.evaluator = NeuralBSDFEvaluator(self.model)
@@ -158,6 +276,12 @@ class NeuralBSDF(mi.BSDF):
     def flags(self) -> mi.BSDFFlags:
         return self._flags
 
+    
+    def run_wrapped_model(self, input):
+        input = torch.tensor(input).unsqueeze(0)
+        # print("input device", input.device())
+        return self.model(input)
+    
     def eval(self, ctx: mi.BSDFContext,  si: mi.SurfaceInteraction3f,
              wo: mi.Vector3f, active=True) -> mi.Color3f:
         wi = si.wi
@@ -176,37 +300,16 @@ class NeuralBSDF(mi.BSDF):
         roughness_val = self.roughness.eval(si)[0]
         metallic_val  = self.metallic.eval(si)[0]
         
-        # if self.evaluator is None:
-        #     return mi.Color3f(0.0)
 
-        # Call the PyTorch model via the dr.custom operator
-        # self.evaluator.eval(ndotl, ndotv, ndoth, ldoth, base_color_val, roughness_val, metallic_val)
-        
-        f_rgb = dr.custom(NeuralBSDFEvaluator, self.model, ndotl, ndotv, ndoth, ldoth,
-                                        base_color_val,
-                                        roughness_val, metallic_val)
+        drinput = dr.auto.ad.TensorXf16([ndotl, ndotv, ndoth, ldoth,
+                                 base_color_val.x, base_color_val.y, base_color_val.z,
+                                 roughness_val, metallic_val])
+        f_rgb = mi.Color3f(self.wrapped_model.eval(drinput))
+
 
         return dr.select(active, f_rgb, mi.Color3f(0.0))
         
-        # dr.eval(ndotl,ndotv,ndoth,ldoth,base_color_val,roughness_val,metallic_val)
-        # # Convert to plain Python floats for torch
-        # scalars = torch.tensor([
-        #     ndotl.torch(), ndotv.torch(), ndoth.torch(), ldoth.torch()
-        # ], dtype=torch.float32)
-        # base_color = torch.tensor([
-        #     base_color_val[0].torch(), base_color_val[1].torch(), base_color_val[2].torch()
-        # ], dtype=torch.float32)
-        # roughness = torch.tensor([roughness_val.torch()], dtype=torch.float32)
-        # metallic  = torch.tensor([metallic_val.torch()], dtype=torch.float32)
 
-        # inp = torch.cat([scalars, base_color, roughness, metallic], dim=0).unsqueeze(0)
-
-        # with torch.no_grad():
-        #     raw = self.model(inp)[0]
-        #     f_rgb = torch.exp(raw - 3.0).clamp_(0.0, 1.0).numpy()
-
-        
-        # return mi.Color3f(f_rgb) * mi.Color3f(valid)
 
     def pdf(self, ctx: mi.BSDFContext, si: mi.SurfaceInteraction3f,
             wo: mi.Vector3f, active=True) -> mi.Float:
