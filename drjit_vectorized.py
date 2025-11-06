@@ -26,10 +26,8 @@ import numpy as np
 import mitsuba as mi
 import drjit as dr
 
-# -----------------------------------------------------------------------------
-# Scene & plugin setup (mirrors extract_data_obj.py)
-# -----------------------------------------------------------------------------
-mi.set_variant('llvm_ad_rgb')  # change to 'cuda_ad_rgb' if GPU variant available
+
+mi.set_variant('scalar_rgb')  # change to 'cuda_ad_rgb' if GPU variant available
 
 OBJ = "data/lubricant_spray_1k.obj"
 TEX = "data/textures"
@@ -53,7 +51,7 @@ _scene_dict = {
     }
 }
 scene = mi.load_dict(_scene_dict)
-shape = scene.shapes()[0]
+shape : mi.Shape = scene.shapes()[0]
 bsdf = shape.bsdf()
 ctx = mi.BSDFContext()
 _rng = dr.rng()  # single RNG instance reused
@@ -77,14 +75,26 @@ _normal_tex, _base_tex, _metal_tex, _rough_tex = [ _load_tex(p, r) for p, r in _
 
 def _sample_wi(m: int) -> mi.Vector3f:
     """Cosine-ish hemisphere distribution (currently uniform in cos(theta)=z)."""
-    u1 = _rng.random(mi.Float, shape=m)
-    u2 = _rng.random(mi.Float, shape=m)
+    u1 = _rng.random(dr.auto.ad.Float, shape=m)
+    u2 = _rng.random(dr.auto.ad.Float, shape=m)
     z = u1
     r = dr.sqrt(dr.maximum(0.0, 1.0 - z * z))
     s, c = dr.sincos(2.0 * dr.pi * u2)
     return mi.Vector3f(r * c, r * s, z)
 
 
+def create_random_surface_interaction(shape : mi.Shape) -> mi.SurfaceInteraction3f:
+    u = _rng.random(dr.auto.ad.Float, shape=1)
+    v = _rng.random(dr.auto.ad.Float, shape=1)
+    point = mi.Point2f([u[0], v[0]])
+    si = mi.SurfaceInteraction3f()
+    si.uv = point
+    si.n = dr.auto.ad.Array3f([0.0, 0.0, 1.0], shape=si.n.shape())
+    return si
+
+
+si = create_random_surface_interaction(shape)
+print("si.p:", si.p)
 def generate_data(n: int, chunk: int = 16384) -> dict:
     """Generate BSDF sample data in vectorized chunks.
 
@@ -120,29 +130,30 @@ def generate_data(n: int, chunk: int = 16384) -> dict:
     ldoth_list = []
 
     produced = 0
-    while produced < n:
-        m = min(chunk, n - produced)
-
+    for i in range(n):
         # Sample surface positions (area sampling)
-        u = _rng.random(mi.Float, shape=m)
-        v = _rng.random(mi.Float, shape=m)
-        sample_2 = mi.Point2f(u, v)
-        ps = shape.sample_position(0.0, sample_2, True)
+        u = _rng.random(dr.auto.ad.Float, shape=1)
+        v = _rng.random(dr.auto.ad.Float, shape=1)
+        
+        # Create Point2f array from u and v arrays
+        sample_2 = mi.Point2f([u[0],v[0]])
+        print("sample_2:", sample_2)
+        ps = shape.sample_position(0.0, sample_2)
 
         si = mi.SurfaceInteraction3f()
         si.p = ps.p
         si.n = ps.n
         si.sh_frame = mi.Frame3f(ps.n)
         si.uv = ps.uv
-        si.time = 0.0
+        si.time = dr.auto.ad.Float(0.0)
 
         # Incoming direction sampling
-        wi_local = _sample_wi(m)
+        wi_local = _sample_wi(1)
         si.wi = wi_local
 
         # BSDF sampling (vectorized)
-        s1 = _rng.random(mi.Float, shape=m)
-        s2 = _rng.random(mi.Float, shape=m)
+        s1 = _rng.random(dr.auto.ad.Float, 1)
+        s2 = _rng.random(dr.auto.ad.Float, 1)
         samp, weight = bsdf.sample(ctx, si, s1, s2)
         wo_local = samp.wo
 
