@@ -9,7 +9,7 @@ from model import parse_model_input_values
 import dataset_optimized
 import arguments_parsing
 import argparse
-
+import numpy as np
 import drjit.auto.ad as drad
 
 
@@ -22,10 +22,9 @@ dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
 dr.set_flag(dr.JitFlag.SymbolicScope, False)
 def main():
     args = arguments_parsing.parse_args()
-    samples = dataset_optimized.load_sample_file(args.data)
+    samples = np.load(args.data, allow_pickle=True)
 
     # gather first 5000 samples for training
-    import numpy as np
     # train_set = np.array([training_set.get for _ in range(1000)])
     
     print(f"Number of training samples: {len(samples['f'])}")
