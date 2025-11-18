@@ -155,7 +155,6 @@ def sample_face_uvs_multiple(face_id : dr.auto.ad.UInt, mesh : mi.Mesh, rng : dr
     
     return positions
 
-dr.set_flag(dr.JitFlag.Debug, True)
 # vertex_array_ordered = mi.Vector3f(dr.gather(dr.auto.ad.Float, vertices, faces))
 
 face_count = dr.width(faces) // 3
@@ -168,7 +167,7 @@ area_total = dr.sum(areas)
 uv_samples = dr.zeros(dr.auto.ad.Array2f, shape= dr.width(indices))
 rng = dr.rng(seed = 42)
 # sample = sample_face_uvs(indices, mesh, rng)
-samples_multiple = sample_face_uvs_multiple(indices, mesh, rng, 2)
+samples_multiple = sample_face_uvs_multiple(indices, mesh, rng, 1)
 print(dr.sum(samples_multiple))
 dr.eval(samples_multiple)
 
@@ -208,12 +207,7 @@ print("is valid", dr.any(si.is_valid()))
 
 
 
-data = {
-    "uv": np.array(dr.detach(samples_multiple)),
-    "bsdf_val": np.array(dr.detach(bsdf_val)),
-    "wi_local": np.array(dr.detach(wi_local)),
-    "wo_local": np.array(dr.detach(wo_local)),
-}
+
 
 def store_as_np(data, filename: str):
     np.save(filename, data)
@@ -223,81 +217,3 @@ store_as_np(data, "training_data.npy")
 data_loaded = np.load("training_data.npy", allow_pickle=True).item()
 print(data_loaded.keys())
 print("Loaded UVs:", data_loaded["uv"])
-# sampler : mi.Sampler = mi.load_dict({"type": "independent", "sample_count": 10})
-
-
-
-
-# # generate N samples
-# for i in range(5):
-#     bsdf_val, spectrum, si, wo_world = calculate_sample(mesh, scene, sampler)
-#     print("BSDF value shape:", bsdf_val)
-#     print("si:", si)
-#     print("wo_world:", wo_world)
-
-# samples_2d = sampler.next_2d()          # shape (N, 2)
-# pos_sample = mesh.sample_position(0.0, samples_2d)  # PositionSample3f
-# si = mesh.eval_parameterization(pos_sample.uv, mi.RayFlags.All)
-
-# bsdf = mesh.bsdf()
-
-# bsdf_at_si = si.bsdf()
-
-# print("width: ", dr.width(si.p))
-
-# # 5. Example: cosine-weighted hemisphere sampling of outgoing direction
-# #    (Demonstration only; adjust for your rendering/integration needs.)
-# hemisphere_samples = sampler.next_2d()   # New random samples
-# wo_local = mi.warp.square_to_cosine_hemisphere(hemisphere_samples)  # shape (N, 3)
-
-# # Convert outgoing directions to world space (if needed)
-# wo_world = si.to_world(wo_local)
-
-# # 6. Evaluate / sample BSDF.
-# # BSDF expects outgoing direction in local frame; si.wi is the incident direction.
-# ctx = mi.BSDFContext()
-
-# # (a) Direct evaluation of BSDF value for chosen wo_local directions:
-# #     bsdf.eval returns the BSDF weight (includes cosine term depending on implementation).
-# bsdf_val = bsdf_at_si.eval(ctx, si, wo_local)
-
-# # (b) Proper BSDF sampling (generating wo from distribution):
-# bsdf_samples_2d = sampler.next_2d()
-# bsdf_samples1_2d = sampler.next_1d()
-# bsdf_val, spectrum = bsdf_at_si.sample(ctx, si, bsdf_samples1_2d ,bsdf_samples_2d)
-
-# # Convert sampled outgoing to world if needed:
-# # sampled_wo_world = si.to_world()
-
-
-# print("BSDF value shape:", bsdf_val)
-# print("Sampled spectrum shape:", spectrum)
-# # 7. Monte Carlo weights for position sampling: area-uniform
-# #    Each sample's surface pdf is pos_sample.pdf (constant).
-# #    If combining with BSDF sampling, a simple estimator might be:
-# #    contrib = (emission_or_radiance * sample_val) / (pos_pdf * bsdf_pdf)
-# pos_pdf = pos_sample.pdf          # scalar or length-N array
-# bsdf_pdf = bsdf_val.pdf                    # from bsdf.sample
-
-
-# # 8. Access geometric fields:
-# positions = si.p
-# normals_geo = si.n          # Geometric normal (unperturbed)
-# uvs = si.uv
-
-# # 9. (Optional) Show a few values
-# print("First position:", positions[0])
-# print("First geometric normal:", normals_geo[0])
-# print("First UV:", uvs[0])
-# print("First BSDF eval value:", bsdf_val)
-# print("First sampled BSDF PDF:", bsdf_pdf)
-
-# # 10. If you need per-sample albedo / base color texture value:
-# #     Evaluate the base_color texture via underlying principled BSDF's parameters.
-# #     Principled BSDF doesn't expose a direct 'base_color.eval' if its texture
-# #     is embedded; you can approximate diffuse albedo by sampling bsdf.sample
-# #     and averaging, or inspect internal params if exposed.
-# #     For a quick approximate per-point diffuse reflectance:
-# #     (This is a heuristic; correct decomposition depends on metallic/roughness.)
-# diffuse_reflectance_est = bsdf_at_si.eval(ctx, si, mi.Vector3f(0,0,1))  # Using normal direction
-# print("First diffuse-like estimate:", diffuse_reflectance_est[0])

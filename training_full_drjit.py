@@ -15,10 +15,10 @@ import drjit.auto.ad as drad
 
 
 
-# dr.set_flag(dr.JitFlag.Debug, True)          # Enables bounds checks & extra validation
+dr.set_flag(dr.JitFlag.Debug, True)          # Enables bounds checks & extra validation
 # dr.set_flag(dr.JitFlag.SymbolicScope, False)          # Optional: verbose kernel trace
-dr.set_flag(dr.JitFlag.SymbolicCalls, True)
-dr.set_flag(dr.JitFlag.SymbolicConditionals, True)
+# dr.set_flag(dr.JitFlag.SymbolicCalls, True)
+# dr.set_flag(dr.JitFlag.SymbolicConditionals, True)
 # dr.set_flag(dr.JitFlag.SymbolicScope, True)
 # dr.set_flag(dr.JitFlag.Debug, True)
 def prepare_batch(b, samples, metal_tex, rough_tex, base_tex):
@@ -50,7 +50,7 @@ def training_step(net, batch, target):
 def run_epoch(net, opt, weights, scaler, samples, _metal_tex, _rough_tex, _base_tex):
     data_length = len(samples['uv'].T)
     avg_loss = 0.0
-    for b in range(data_length):
+    for b in tqdm(range(data_length), desc="Epoch Progress", unit="sample", total=data_length):
         weights[:] = Float16(opt['weights'])
 
         input_tensor, target = prepare_batch(b, samples, _metal_tex, _rough_tex, _base_tex)
@@ -60,7 +60,7 @@ def run_epoch(net, opt, weights, scaler, samples, _metal_tex, _rough_tex, _base_
         avg_loss += loss
         dr.clear_grad(weights)
     print(f"Avg Loss: {avg_loss}")
-        
+    
 
 def main():
 
@@ -130,6 +130,6 @@ def main():
     epochs = 5
 
     for epoch in tqdm(range(epochs), desc="Overall Training Progress", unit="epoch", total=epochs):
-        run_epoch(net, opt, weights, scaler, samples, _metal_tex, _rough_tex, _base_tex)    
+        run_epoch(net, opt, weights, scaler, samples, _metal_tex, _rough_tex, _base_tex) 
 if __name__ == "__main__":
     main()
