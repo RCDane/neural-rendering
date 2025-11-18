@@ -5,8 +5,8 @@ import drjit.nn as nn
 from drjit.opt import Adam, GradScaler
 from drjit.auto.ad import Texture2f, TensorXf, TensorXf16, Float16, Float32, Array2f, Array3f
 import mitsuba as mi
-dr.set_backend("llvm")
-mi.set_variant('llvm_ad_rgb')
+dr.set_backend("cuda")
+mi.set_variant('cuda_ad_rgb')
 # Load a test image and construct a texture object
 ref = TensorXf(iio.imread("https://d38rqfq1h7iukm.cloudfront.net/media/uploads/wjakob/2024/06/wave-128.png") / 256)
 tex = Texture2f(ref)
@@ -49,7 +49,6 @@ scaler = GradScaler()
 
 res = 256
 for i in range(10):
-    print("epoch: ", i)
     for i in tqdm(range(500)):
         # Update network state from optimizer
         weights[:] = Float16(opt['weights'])
@@ -59,14 +58,15 @@ for i in range(10):
         p = (Array2f(dr.meshgrid(t, t)) + rng.random(Array2f, (2, res * res))) / res
 
         # Evaluate neural net + L2 loss
-        print("p shape:", p.shape)
-        img = Array3f(net(nn.CoopVec(p)))
+        
+        coop = nn.CoopVec(p)
+        pred = net(coop)
+        img = Array3f(pred)
         loss = dr.squared_norm(tex.eval(p) - img)
 
         # Mixed-precision training: take suitably scaled steps
         dr.backward(scaler.scale(loss))
         scaler.step(opt)
-        break
 
 # Done optimizing, now let's plot the result
 t = dr.linspace(Float32, 0, 1, res)

@@ -1,17 +1,19 @@
 import mitsuba as mi
 import numpy as np
 import drjit as dr
+# dr.set_flag(dr.JitFlag.Debug, True)
+# dr.set_flag(dr.JitFlag.SymbolicCalls, False)
+# dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+# dr.set_flag(dr.JitFlag.SymbolicLoops, False)
 mi.set_variant("llvm_ad_rgb")  # or "llvm_ad_rgb" / "cuda_ad_rgb" for vectorization
 dr.set_backend("llvm")
 import drjit.auto.ad as drad
-import drjit.random
 import drjit.nn as nn
 from drjit.opt import Adam, GradScaler
-
+from src.utils import save_neural_network, load_neural_network
 import arguments_parsing
 
 
-dr.set_flag(dr.JitFlag.Debug, True)
 
 OBJ = "data/lubricant_spray_1k.obj"
 TEX = "data/textures"
@@ -190,7 +192,9 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
 
     ctx = mi.BSDFContext()
     bsdf_val = bsdf.eval(ctx, si, wo_local)
-
+    dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo)
+    # print("bsdf_val shape:", dr.shape(bsdf_val))
+    # print("wi_local shape:", dr.shape(wi_local))
     return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo
 
 
@@ -203,28 +207,42 @@ def run_epoch(net, opt, weights, scaler,mesh, _metal_tex, _rough_tex, _base_tex)
     avg_loss = drad.Float32(0.0)
     dr.disable_grad(avg_loss)
     data_length = 100
-    dr.syntax()    
     for _ in range(data_length):
         weights[:] = drad.Float16(opt['weights'])
-        dr.enable_grad(weights)
-        uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo = generate_batched_uv_samples(mesh, 2, _metal_tex, _rough_tex, _base_tex)
-        dr.enable_grad(wi_local, wo_local, bsdf_val)
+        # dr.enable_grad(weights)
+        uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo = generate_batched_uv_samples(mesh, 1, _metal_tex, _rough_tex, _base_tex)
+        # print("wi_local type:", type(wi_local), " shape:", dr.shape(wi_local))
+        # print("wo_local type:", type(wo_local), " shape:", dr.shape(wo_local))
+
+        # wi_local = drad.TensorXf16(wi_local)
+        # wo_local = drad.TensorXf16(wo_local)
+        
+        # dr.enable_grad(wi_local, wo_local, bsdf_val)
         metalness = drad.TensorXf16(metalness.array)
         roughness = drad.TensorXf16(roughness.array)
         albedo = drad.TensorXf16(albedo.array)
         # print("wi_local type:", type(wi_local), "wo_local type:", type(wo_local), "metalness type:", type(metalness), "roughness type:", type(roughness), "albedo type:", type(albedo))
         
+        rng = dr.rng(seed=drad.UInt(0))
+        
+
+        
         input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_local), *drad.TensorXf16(wo_local), *metalness, *roughness, *albedo)
-        target = drad.TensorXf16(bsdf_val)    
+        # input_tensor = dr.nn.CoopVec(drad.Array3f16(wi_local), drad.Array3f16(wo_local))
         
-        pred = drad.TensorXf16(net(input_tensor))
-        loss = dr.mean(dr.square(pred - target))
-        
+        target = drad.Array3f(bsdf_val)    
+        pred =  net(input_tensor)
+        unpacked_pred = drad.Array3f(pred)
+        # print("pred shape:", dr.shape(unpacked_pred), " target shape:", dr.shape(target))
+        sqr = dr.square(unpacked_pred - target)
+        # print("sqr shape:", dr.shape(sqr))
+        loss = dr.mean(sqr)
+        # print("loss:", loss)
         dr.backward(loss)
         scaler.step(opt)
-        avg_loss += loss
-        dr.clear_grad(weights)
-    print(f"Avg Loss: {avg_loss}")
+        avg_loss += dr.mean(loss)
+        # dr.clear_grad(weights)
+    print(f"Avg Loss: {avg_loss/data_length}")
     
     
 def main():
@@ -271,23 +289,32 @@ def main():
 
     tranining_type = drad.TensorXf16
     print("Using training type:", tranining_type)
+    
+    
     net = net.alloc(
         dtype=tranining_type,
         size=-1,
         rng=rng
     )
+    
     weights, net = nn.pack(net, layout='training')
+    
+    # weights_before = dr.copy(weights)
+    # save_neural_network(weights_before , "initial_weights.pkl")
+    
+    # loaded_weights = load_neural_network("initial_weights.pkl")
+    # loaded_weights = drad.Float16(loaded_weights)
+    # print("Loaded weights type:", type(loaded_weights), " shape:", dr.shape(loaded_weights))
+    # weights, net = nn.pack(net, layout='training')
+    # dr.set_flag(dr.JitFlag.Debug, True)
+    # dr.enable_grad(weights)
+    # # weights[:] = loaded_weights
+    # dr.eval(weights)
+    # for i, w in enumerate(weights_before):
+    #     if not dr.allclose(w, weights[i]):
+    #         print(f"Weight {i} differs after loading!")
+    
     dr.enable_grad(weights)
-    
-    weights_before = dr.copy(weights)
-    save_neural_network(weights , "initial_weights.pkl")
-    
-    weights = load_neural_network("initial_weights.pkl")
-    for k in range(dr.shape(weights)[0]):
-        assert dr.allclose(weights[k], weights_before[k])
-    
-    print(net)
-    print("weights type:", type(weights), " weights shape:", dr.shape(weights))
 
     opt = Adam(lr=1e-4, params={'weights': drad.Float32(weights)})
     scaler = GradScaler()
