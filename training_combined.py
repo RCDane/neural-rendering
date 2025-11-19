@@ -238,7 +238,7 @@ def run_epoch(net, opt, weights, scaler,mesh, _metal_tex, _rough_tex, _base_tex)
         # print("sqr shape:", dr.shape(sqr))
         loss = dr.mean(sqr)
         # print("loss:", loss)
-        dr.backward(loss)
+        dr.backward(scaler.scale(loss))
         scaler.step(opt)
         avg_loss += dr.mean(loss)
         # dr.clear_grad(weights)
@@ -275,11 +275,12 @@ def main():
     inputsize = 15
 
     net = nn.Sequential(
-        nn.Linear(inputsize, 32),
+        nn.Linear(inputsize, 64),
         nn.ReLU(),
-        nn.Linear(32, 32),
+        nn.Linear(64, 32),
         nn.ReLU(),
         nn.Linear(32, 3),
+        nn.ScaleAdd(1.0, -3.0),
         nn.Exp(),
     )
 
@@ -299,21 +300,12 @@ def main():
     
     weights, net = nn.pack(net, layout='training')
     
-    # weights_before = dr.copy(weights)
-    # save_neural_network(weights_before , "initial_weights.pkl")
     
-    # loaded_weights = load_neural_network("initial_weights.pkl")
-    # loaded_weights = drad.Float16(loaded_weights)
-    # print("Loaded weights type:", type(loaded_weights), " shape:", dr.shape(loaded_weights))
-    # weights, net = nn.pack(net, layout='training')
-    # dr.set_flag(dr.JitFlag.Debug, True)
-    # dr.enable_grad(weights)
-    # # weights[:] = loaded_weights
-    # dr.eval(weights)
-    # for i, w in enumerate(weights_before):
-    #     if not dr.allclose(w, weights[i]):
-    #         print(f"Weight {i} differs after loading!")
+    save_neural_network(weights ,net, "initialized_model/trained_weights_initial.pkl")
     
+    loaded_weights, loaded_net = load_neural_network("initialized_model/trained_weights_initial_metadata.json")
+    
+
     dr.enable_grad(weights)
 
     opt = Adam(lr=1e-4, params={'weights': drad.Float32(weights)})
@@ -325,10 +317,18 @@ def main():
     counter = 0
 
     save_every = 5
-
-    epochs = 20
+    save_folder = "trained_models/"
+    run = "run1/"
+    epochs = 100
 
     for epoch in tqdm.tqdm(range(epochs), desc="Overall Training Progress", unit="epoch", total=epochs):
         run_epoch(net, opt, weights, scaler, mesh, _metal_tex, _rough_tex, _base_tex) 
+        # if epoch % save_every == 0:
+        #     save_neural_network(weights ,net, f"{save_folder}{run}trained_weights_epoch_{epoch}.pkl")
+
+
+    # verify model
+    
+
 if __name__ == "__main__":
     main()
