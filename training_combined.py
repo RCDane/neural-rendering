@@ -1,12 +1,14 @@
 import mitsuba as mi
 import numpy as np
 import drjit as dr
+import matplotlib.pyplot as plt
+
 # dr.set_flag(dr.JitFlag.Debug, True)
-# dr.set_flag(dr.JitFlag.SymbolicCalls, False)
-# dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
-# dr.set_flag(dr.JitFlag.SymbolicLoops, False)
-mi.set_variant("llvm_ad_rgb")  # or "llvm_ad_rgb" / "cuda_ad_rgb" for vectorization
-dr.set_backend("llvm")
+dr.set_flag(dr.JitFlag.SymbolicCalls, False)
+dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+dr.set_flag(dr.JitFlag.SymbolicLoops, False)
+mi.set_variant("cuda_ad_rgb")  # or "llvm_ad_rgb" / "cuda_ad_rgb" for vectorization
+dr.set_backend("cuda")
 import drjit.auto.ad as drad
 import drjit.nn as nn
 from drjit.opt import Adam, GradScaler
@@ -210,7 +212,8 @@ def run_epoch(net, opt, weights, scaler,mesh, _metal_tex, _rough_tex, _base_tex)
     for _ in range(data_length):
         weights[:] = drad.Float16(opt['weights'])
         # dr.enable_grad(weights)
-        uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo = generate_batched_uv_samples(mesh, 1, _metal_tex, _rough_tex, _base_tex)
+        uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo = generate_batched_uv_samples(
+            mesh, 1, _metal_tex, _rough_tex, _base_tex)
         # print("wi_local type:", type(wi_local), " shape:", dr.shape(wi_local))
         # print("wo_local type:", type(wo_local), " shape:", dr.shape(wo_local))
 
@@ -301,9 +304,7 @@ def main():
     weights, net = nn.pack(net, layout='training')
     
     
-    save_neural_network(weights ,net, "initialized_model/trained_weights_initial.pkl")
-    
-    loaded_weights, loaded_net = load_neural_network("initialized_model/trained_weights_initial_metadata.json")
+
     
 
     dr.enable_grad(weights)
@@ -319,14 +320,86 @@ def main():
     save_every = 5
     save_folder = "trained_models/"
     run = "run1/"
-    epochs = 100
+    epochs = 400
 
     for epoch in tqdm.tqdm(range(epochs), desc="Overall Training Progress", unit="epoch", total=epochs):
         run_epoch(net, opt, weights, scaler, mesh, _metal_tex, _rough_tex, _base_tex) 
         # if epoch % save_every == 0:
         #     save_neural_network(weights ,net, f"{save_folder}{run}trained_weights_epoch_{epoch}.pkl")
 
+    from custom_bsdf_dr import NeuralBSDF
+    
+    neural_bsdf_dict = {
+        "type": "neural_bsdf",
+        'base_color': {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_diff_1k.jpg', 'raw': False},
+        'metallic':   {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_metal_1k.exr', 'raw': True},
+        'roughness':  {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_rough_1k.exr', 'raw': True},
+        'normal_map': {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_nor_gl_1k.exr', 'raw': True},
+        'input_dim': 15,
+        'output_dim': 3,
+    }
+    neural_bsdf : NeuralBSDF = mi.load_dict(neural_bsdf_dict)
+    neural_bsdf.add_model(net)
+    scene_dict = {
+		'type': 'scene',
+        'integrator': {
+            'type': 'path'
+        },
+        'env': {
+            'type': 'constant',
+            'radiance': {'type': 'rgb', 'value': [1.0, 1.0, 1.0]}
+        },
+		'camera': {
+			'type': 'perspective',
+			'to_world': mi.ScalarTransform4f.look_at(
+				origin=[0.2, 0.2, 0.2], target=[0, 0, 0], up=[0, 1, 0]
+			),
+			'fov': 45,
+			'film': {
+				'type': 'hdrfilm',
+				'width': 400,
+				'height': 400,
+				'rfilter': {'type': 'box'}
+			}
+		},
+		'mesh': 
+        #     {
 
+        #         'type': 'obj',
+        #         'filename': OBJ,
+        #         'face_normals': True,
+        #         'bsdf': {
+        #             'type': 'normalmap',
+        #             'normalmap': {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_nor_gl_1k.exr', 'raw': True},
+        #             'bsdf': {
+        #                 'type': 'principled',
+        #                 'base_color': {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_diff_1k.jpg', 'raw': False},
+        #                 'metallic':   {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_metal_1k.exr', 'raw': True},
+        #                 'roughness':  {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_rough_1k.exr', 'raw': True},
+        #             }
+        #         }
+        # }
+      {
+			'type': 'obj',
+            'filename': OBJ,
+            'face_normals': True,
+            'bsdf': neural_bsdf
+		}
+	}
+    
+    s = mi.load_dict(scene_dict)
+    
+    
+    
+    image = mi.render(s, spp=128)
+    
+    
+    print("Neural BSDF loaded.")
+    print(neural_bsdf)
+
+    plt.axis("off")
+    plt.imshow(image**(1/2.2))
+    plt.show()
     # verify model
     
 
