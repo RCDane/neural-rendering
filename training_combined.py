@@ -4,12 +4,12 @@ import numpy as np
 import drjit as dr
 import matplotlib.pyplot as plt
 # dr.set_flag(dr.JitFlag.Debug, True)
-dr.set_flag(dr.JitFlag.SymbolicCalls, False)
-dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
-dr.set_flag(dr.JitFlag.SymbolicLoops, False)
+# dr.set_flag(dr.JitFlag.SymbolicCalls, False)
+# dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+# dr.set_flag(dr.JitFlag.SymbolicLoops, False)
 dr.set_thread_count(16)
-mi.set_variant("llvm_ad_rgb")  # or "llvm_ad_rgb" / "cuda_ad_rgb" for vectorization
-dr.set_backend("llvm")
+mi.set_variant("cuda_ad_rgb")  # or "llvm_ad_rgb" / "cuda_ad_rgb" for vectorization
+dr.set_backend("cuda")
 
 import sampling
 import drjit.auto.ad as drad
@@ -57,38 +57,46 @@ _scene_dict = {
 
 import tqdm
 import random
+dr.syntax
 def run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler,mesh, _metal_tex, _rough_tex, _base_tex, generator=None):
-    avg_loss = drad.Float32(0.0)
-    dr.disable_grad(avg_loss)
-    data_length = 100
+    # avg_loss = drad.Float32(0.0)
+    # dr.disable_grad(avg_loss)
+    dr.disable_grad(mesh, _metal_tex, _rough_tex, _base_tex)
+    # data_length = 1
     
     if generator is None:
         generator = dr.rng(seed=drad.UInt(random.randint(0, 1e6)))
     
-    for _ in range(data_length):
-        weights[:] = drad.Float16(opt['weights'])
-        encoder_weights[:] = drad.Float16(opt['encoder_weights'])
-        # dr.enable_grad(weights)
-        uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo = sampling.generate_batched_uv_samples(
-            mesh, 1, _metal_tex, _rough_tex, _base_tex, generator=generator)
+    weights[:] = drad.Float16(opt['weights'])
+    encoder_weights[:] = drad.Float16(opt['encoder_weights'])
 
-        metalness = drad.TensorXf16(metalness.x)
-        roughness = drad.TensorXf16(roughness.x)
-        albedo = drad.TensorXf16(albedo.array)
-        encoded_texel = encoder_network(dr.nn.CoopVec(metalness, roughness, *albedo))
-        
-        
-        input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_local), *drad.TensorXf16(wo_local), *drad.TensorXf16(encoded_texel))
-        
-        target = drad.Array3f(bsdf_val)    
-        pred =  net(input_tensor)
-        unpacked_pred = drad.Array3f(pred)
-        sqr = dr.square(unpacked_pred - target)
-        loss = dr.mean(sqr)
-        dr.backward(scaler.scale(loss))
-        scaler.step(opt)
-        avg_loss += dr.mean(loss)
-    return avg_loss / data_length    
+    uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo = sampling.generate_batched_uv_samples(
+        mesh, 1, _metal_tex, _rough_tex, _base_tex, generator=generator)
+    
+    
+    dr.eval(uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, generator)
+    
+    metalness = drad.TensorXf16(metalness.x)
+    roughness = drad.TensorXf16(roughness.x)
+    albedo = drad.TensorXf16(albedo.array)
+    encoded_texel = encoder_network(dr.nn.CoopVec(metalness, roughness, *albedo))
+    
+    
+    input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_local), *drad.TensorXf16(wo_local), *drad.TensorXf16(encoded_texel))
+    
+    target = drad.Array3f(bsdf_val)    
+    pred =  net(input_tensor)
+    unpacked_pred = drad.Array3f(pred)
+    sqr = dr.square(unpacked_pred - target)
+    # dr.eval(sqr)
+    loss = dr.mean(sqr)
+    dr.eval(loss)
+    dr.backward(scaler.scale(loss))
+    scaler.step(opt)
+    avg_loss = dr.mean(loss)
+
+    # i += 1
+    return avg_loss     
 
 import argparse
 
@@ -136,11 +144,15 @@ def main():
     encoder_output_size = 8
 
     encoder_network = nn.Sequential(
-        nn.Linear(encoder_input_size, 32),
+        nn.Linear(encoder_input_size, 64),
         nn.ReLU(),
-        nn.Linear(32, 32),
+        nn.Linear(64, 64),
         nn.ReLU(),
-        nn.Linear(32, encoder_output_size),
+        nn.Linear(64, 64),
+        nn.ReLU(),
+        nn.Linear(64, 64),
+        nn.ReLU(),
+        nn.Linear(64, encoder_output_size),
     )
     
     
@@ -204,7 +216,7 @@ def main():
     save_every = 5
     save_folder = "trained_models/"
     run = "run1/"
-    epochs = 100
+    epochs = 50000
 
     generator = dr.rng(seed=drad.UInt(0))
     
@@ -216,9 +228,9 @@ def main():
         loss += run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler, mesh, _metal_tex, _rough_tex, _base_tex, generator=generator) 
         # if epoch % save_every == 0:
         #     save_neural_network(weights ,net, f"{save_folder}{run}trained_weights_epoch_{epoch}.pkl")
-        if epoch != 0 and epoch % 50 == 0:
-            pbar.update(50)
-            pbar.set_postfix({'loss': loss / 50})
+        if epoch != 0 and epoch % 500 == 0:
+            pbar.update(500)
+            pbar.set_postfix({'loss': loss / 500})
             loss = drad.Float32(0.0)
 
     from custom_bsdf_dr import NeuralBSDF
@@ -233,11 +245,15 @@ def main():
         'output_dim': 3,
     }
     neural_bsdf : NeuralBSDF = mi.load_dict(neural_bsdf_dict)
+    
+    dr.disable_grad(weights)
+    dr.disable_grad(encoder_weights)
+    
     neural_bsdf.add_model(net, encoder_network)
     scene_dict = {
 		'type': 'scene',
         'integrator': {
-            'type': 'path'
+            'type': 'prb'
         },
         'env': {
             'type': 'constant',
@@ -246,7 +262,7 @@ def main():
 		'camera': {
 			'type': 'perspective',
 			'to_world': mi.ScalarTransform4f.look_at(
-				origin=[0.2, 0.2, 0.2], target=[0, 0, 0], up=[0, 1, 0]
+				origin=[0.2, 0.2, 0.2], target=[0, 0.1, 0], up=[0, 1, 0]
 			),
 			'fov': 45,
 			'film': {
@@ -283,9 +299,11 @@ def main():
     
     s = mi.load_dict(scene_dict)
     
+    dr.set_flag(dr.JitFlag.SymbolicCalls, False)
+    dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+    dr.set_flag(dr.JitFlag.SymbolicLoops, False)
     
-    
-    image = mi.render(s, spp=128)
+    image = mi.render(s, spp=32)
     
     
     print("Neural BSDF loaded.")

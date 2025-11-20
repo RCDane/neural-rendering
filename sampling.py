@@ -72,7 +72,7 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
     rng = generator
     # sample = sample_face_uvs(indices, mesh, rng)
     samples_multiple = sample_face_uvs_multiple(indices, mesh, rng, num_samples_per_face)
-    dr.eval(samples_multiple)
+    # dr.eval(samples_multiple)
 
 
     def random_wi_sample(rng: dr.random.Generator, n: int =1):
@@ -96,7 +96,7 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
 
     ctx = mi.BSDFContext()
     bsdf_val = bsdf.eval(ctx, si, wo_local)
-    dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo)
+    # dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo)
     return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo
 
 
