@@ -68,8 +68,9 @@ class NeuralBSDF(mi.BSDF):
         # # Report supported flags
         self._flags = mi.BSDFFlags.Diffuse | mi.BSDFFlags.FrontSide
 
-    def add_model(self, model: dr.nn.Module):
+    def add_model(self, model: dr.nn.Module, encoder_model: dr.nn.Module = None):
         self.model = model
+        self.encoder_model = encoder_model
     def flags(self) -> mi.BSDFFlags:
         return self._flags
 
@@ -79,8 +80,8 @@ class NeuralBSDF(mi.BSDF):
     def eval(self, ctx: mi.BSDFContext,  si: mi.SurfaceInteraction3f,
              wo: mi.Vector3f, active=True) -> mi.Color3f:
         wi = si.wi
-        # wi = si.to_local(wi)
-        # wo = si.to_local(wo)
+        wi = si.to_local(wi)
+        wo = si.to_local(wo)
         cos_theta_i = mi.Frame3f.cos_theta(wi)
         cos_theta_o = mi.Frame3f.cos_theta(wo)
         valid = active & (cos_theta_i > 0) & (cos_theta_o > 0)
@@ -92,22 +93,29 @@ class NeuralBSDF(mi.BSDF):
         ldoth = dr.clamp(dr.dot(wi, h), 0.0, 1.0)
 
         # Evaluate (possibly textured) parameters
-        base_color_val = drad.TensorXf16(self.base_color.eval(si))
-        roughness_val = drad.TensorXf16(self.roughness.eval(si))
-        metallic_val  = drad.TensorXf16(self.metallic.eval(si))
+        
+        base_color = self.base_color.eval(si)
+        roughness = self.roughness.eval_1(si)
+        metallic  = self.metallic.eval_1(si)
+        
+        dr.eval(base_color, roughness, metallic)
+        roughness_val = dr.reshape(drad.TensorXf16(roughness), (1, -1))
+        metallic_val  = dr.reshape(drad.TensorXf16(metallic), (1, -1))
         wi_local = dr.reshape(drad.TensorXf16(wi),(3,-1))
         wo_local = dr.reshape(drad.TensorXf16(wo),(3,-1))
-        # print("wi_local:", wi_local, "wi_local shape:", wi_local.shape)
-        # print("wo_local:", wo_local, "wo_local shape:", wo_local.shape)
-        # print("base_color_val:", base_color_val, "base_color_val shape:", base_color_val.shape)
         
         
-        input_concat = dr.concat([wi_local, wo_local,
-                                 metallic_val, roughness_val, base_color_val], axis=0)
-        
-        element_length = wi_local.shape[1]
-        
-        input = dr.nn.CoopVec(*input_concat)
+        base_color_val = drad.TensorXf16(base_color)
+        if self.encoder_model is not None:
+            encoded_texel = self.encoder_model(dr.nn.CoopVec(metallic_val, roughness_val, *drad.TensorXf16(base_color)))
+            encoded_texel = drad.TensorXf16(encoded_texel)
+            input_concat = dr.concat([wi_local, wo_local,
+                                    encoded_texel], axis=0)
+            input = dr.nn.CoopVec(*input_concat)
+        else:
+            input_concat = dr.concat([wi_local, wo_local,
+                                    metallic_val, roughness_val, base_color_val], axis=0)
+            input = dr.nn.CoopVec(*input_concat)
         # input = dr.nn.CoopVec(wi_local, wo_local,
         #                          metallic_val, roughness_val, base_color_val)
         f_rgb = mi.Color3f(self.model(input))
