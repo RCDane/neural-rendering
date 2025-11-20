@@ -1,7 +1,7 @@
 #!/bin/sh 
 ### General options 
 ### -- specify queue -- 
-#BSUB -q gpul40s
+#BSUB -q gpua100
 ### -- set the job Name -- 
 #BSUB -J neural_rendering_training
 ### -- ask for number of cores (default: 1) -- 
@@ -26,4 +26,4 @@ module load cuda/12.9.1
 nvidia-smi
 
 source ../.nr-env/bin/activate
-python3 training_combined.py --output_folder output/run4 --training_config training_configs/default.yml > output.log
+python3 training_combined.py --output_folder output/nov_20_11/run3 --training_config training_configs/default.yml > output.log

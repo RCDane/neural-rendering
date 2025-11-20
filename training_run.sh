@@ -23,4 +23,4 @@ if [ ! -f "$training_config" ]; then
 fi
 
 
-bash training.sh "$output_folder" "$training_config"
+bsub < training.sh "$output_folder" "$training_config"

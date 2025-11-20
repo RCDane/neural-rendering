@@ -24,7 +24,6 @@ OBJ = "data/lubricant_spray_1k.obj"
 TEX = "data/textures"
 # Load mesh & create a scene or directly load a bsdf
 _scene_dict = {
-
         'type': 'obj',
         'filename': OBJ,
         'face_normals': True,
@@ -39,21 +38,6 @@ _scene_dict = {
             }
         }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 import tqdm
 import random
@@ -71,7 +55,7 @@ def run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler,mesh, 
     encoder_weights[:] = drad.Float16(opt['encoder_weights'])
 
     uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo = sampling.generate_batched_uv_samples(
-        mesh, 1, _metal_tex, _rough_tex, _base_tex, generator=generator)
+        mesh, 5, _metal_tex, _rough_tex, _base_tex, generator=generator)
     
     
     dr.eval(uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, generator)
@@ -79,22 +63,38 @@ def run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler,mesh, 
     metalness = drad.TensorXf16(metalness.x)
     roughness = drad.TensorXf16(roughness.x)
     albedo = drad.TensorXf16(albedo.array)
+
     encoded_texel = encoder_network(dr.nn.CoopVec(metalness, roughness, *albedo))
     
+    unpacked_texel = drad.TensorXf16(encoded_texel)
+    dr.eval(unpacked_texel)
+    input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_local), *drad.TensorXf16(wo_local), *unpacked_texel)
     
-    input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_local), *drad.TensorXf16(wo_local), *drad.TensorXf16(encoded_texel))
     
-    target = drad.Array3f(bsdf_val)    
+    
+    
+    target = drad.Array3f(bsdf_val)
     pred =  net(input_tensor)
-    unpacked_pred = drad.Array3f(pred)
-    sqr = dr.square(unpacked_pred - target)
+    
+    unpacked_pred = drad.TensorXf(pred)
+    dr.eval(unpacked_pred)
+    
+    # print("Pred shape:", dr.shape(unpacked_pred))
+    
+    unpacked_color = drad.Array3f(unpacked_pred[:3])
+    unpacked_albedo = drad.TensorXf(unpacked_pred[3:])
+    # print("Target shape:", dr.shape(unpacked_color))
+    # output is 3 bsdf and 3 rgb
+    
+        
     # dr.eval(sqr)
-    loss = dr.mean(sqr)
-    dr.eval(loss)
+    albedo_loss = dr.mean(dr.square(unpacked_albedo - albedo))
+    bsdf_loss = dr.mean(dr.square(unpacked_color - target))
+    
+    loss = dr.mean(bsdf_loss + albedo_loss)
     dr.backward(scaler.scale(loss))
     scaler.step(opt)
-    avg_loss = dr.mean(loss)
-
+    avg_loss = loss
     # i += 1
     return avg_loss     
 
@@ -141,18 +141,14 @@ def main():
     # train_set = np.array([training_set.get for _ in range(1000)])
 
     encoder_input_size = 5
-    encoder_output_size = 8
+    encoder_output_size = 4
 
     encoder_network = nn.Sequential(
-        nn.Linear(encoder_input_size, 64),
+        nn.Linear(encoder_input_size, 16),
         nn.ReLU(),
-        nn.Linear(64, 64),
+        nn.Linear(16, 16),
         nn.ReLU(),
-        nn.Linear(64, 64),
-        nn.ReLU(),
-        nn.Linear(64, 64),
-        nn.ReLU(),
-        nn.Linear(64, encoder_output_size),
+        nn.Linear(16, encoder_output_size),
     )
     
     
@@ -171,7 +167,7 @@ def main():
         nn.ReLU(),
         nn.Linear(32, 32),
         nn.ReLU(),
-        nn.Linear(32, 3),
+        nn.Linear(32, 6),
         nn.Exp(),
     )
 
@@ -216,21 +212,20 @@ def main():
     save_every = 5
     save_folder = "trained_models/"
     run = "run1/"
-    epochs = 50000
+    epochs = 100000
 
     generator = dr.rng(seed=drad.UInt(0))
     
     pbar = tqdm.tqdm( desc="Epoch Training Progress", unit="sample", total=epochs)
-    
+    print_every = 10000
     loss = drad.Float32(0.0)
     
     for epoch in range(epochs):
         loss += run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler, mesh, _metal_tex, _rough_tex, _base_tex, generator=generator) 
-        # if epoch % save_every == 0:
-        #     save_neural_network(weights ,net, f"{save_folder}{run}trained_weights_epoch_{epoch}.pkl")
-        if epoch != 0 and epoch % 500 == 0:
-            pbar.update(500)
-            pbar.set_postfix({'loss': loss / 500})
+
+        if epoch != 0 and epoch % print_every == 0:
+            pbar.update(print_every)
+            pbar.set_postfix({'loss': loss / print_every})
             loss = drad.Float32(0.0)
 
     from custom_bsdf_dr import NeuralBSDF
@@ -253,7 +248,7 @@ def main():
     scene_dict = {
 		'type': 'scene',
         'integrator': {
-            'type': 'prb'
+            'type': 'path'
         },
         'env': {
             'type': 'constant',

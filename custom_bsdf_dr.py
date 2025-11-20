@@ -118,7 +118,13 @@ class NeuralBSDF(mi.BSDF):
             input = dr.nn.CoopVec(*input_concat)
         # input = dr.nn.CoopVec(wi_local, wo_local,
         #                          metallic_val, roughness_val, base_color_val)
-        f_rgb = mi.Color3f(self.model(input))
+        
+        output = drad.TensorXf(self.model(input))
+        
+        
+        
+        f_rgb = mi.Color3f(output[:3])
+        
         # print("f_rgb:",f_rgb, "f_rgb shape:", f_rgb.shape)
 
         return dr.select(active, f_rgb, mi.Color3f(0.0))
