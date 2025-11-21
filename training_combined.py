@@ -39,23 +39,26 @@ _scene_dict = {
         }
 }
 
+dr.syntax
+def log_l1(pred, target, eps=1e-6):
+    return dr.mean(dr.abs(pred - target))
+
+
 import tqdm
 import random
 dr.syntax
-def run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler,mesh, _metal_tex, _rough_tex, _base_tex, generator=None):
+def run_epoch(net, encoder_network, shading_frame_network, opt, weights, encoder_weights, shading_frame_weights, scaler,mesh, _metal_tex, _rough_tex, _base_tex, _normal_tex, generator):
     # avg_loss = drad.Float32(0.0)
     # dr.disable_grad(avg_loss)
-    dr.disable_grad(mesh, _metal_tex, _rough_tex, _base_tex)
     # data_length = 1
     
-    if generator is None:
-        generator = dr.rng(seed=drad.UInt(random.randint(0, 1e6)))
+
     
     weights[:] = drad.Float16(opt['weights'])
     encoder_weights[:] = drad.Float16(opt['encoder_weights'])
-
-    uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo = sampling.generate_batched_uv_samples(
-        mesh, 5, _metal_tex, _rough_tex, _base_tex, generator=generator)
+    shading_frame_weights[:] = drad.Float16(opt['shading_frame_weights'])
+    uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, normal = sampling.generate_batched_uv_samples(
+        mesh, 1, _metal_tex, _rough_tex, _base_tex, _normal_tex, generator=generator)
     
     
     dr.eval(uv_coords, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, generator)
@@ -64,12 +67,33 @@ def run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler,mesh, 
     roughness = drad.TensorXf16(roughness.x)
     albedo = drad.TensorXf16(albedo.array)
 
-    encoded_texel = encoder_network(dr.nn.CoopVec(metalness, roughness, *albedo))
+    encoded_texel = encoder_network(dr.nn.CoopVec(metalness, roughness, *albedo, *normal))
     
     unpacked_texel = drad.TensorXf16(encoded_texel)
-    dr.eval(unpacked_texel)
-    input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_local), *drad.TensorXf16(wo_local), *unpacked_texel)
     
+    frame_vectors = shading_frame_network(encoded_texel)
+    
+    unpacked_frame_vectors = drad.TensorXf(frame_vectors) 
+    
+    sh_n = drad.Array3f(unpacked_frame_vectors[:3])
+    sh_t = drad.Array3f(unpacked_frame_vectors[3:])
+    sh_b = dr.cross(sh_n, sh_t)
+    
+    unpacked_shading_frame = drad.Matrix3f(sh_n, sh_t, sh_b)
+    
+    
+    
+    # print("Shading frame shape:", dr.shape(unpacked_shading_frame))
+    
+    dr.eval(unpacked_shading_frame)
+    
+    # print("wi shape:", dr.shape(wi))
+    
+    wi_transformed = dr.matmul(unpacked_shading_frame,drad.Array3f(wi_local))
+    wo_transformed = dr.matmul(unpacked_shading_frame,drad.Array3f(wo_local))
+    
+    dr.eval(unpacked_texel)
+    input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_transformed), *drad.TensorXf16(wo_transformed), *unpacked_texel)
     
     
     
@@ -77,7 +101,6 @@ def run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler,mesh, 
     pred =  net(input_tensor)
     
     unpacked_pred = drad.TensorXf(pred)
-    dr.eval(unpacked_pred)
     
     # print("Pred shape:", dr.shape(unpacked_pred))
     
@@ -87,11 +110,12 @@ def run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler,mesh, 
     # output is 3 bsdf and 3 rgb
     
         
+    unpacked_color = dr.clip(unpacked_color, 0.0, 100000000.0)
     # dr.eval(sqr)
-    albedo_loss = dr.mean(dr.square(unpacked_albedo - albedo))
-    bsdf_loss = dr.mean(dr.square(unpacked_color - target))
+    # albedo_loss = dr.mean(dr.square(unpacked_albedo - albedo))
+    bsdf_loss = log_l1(unpacked_color, target)
     
-    loss = dr.mean(bsdf_loss + albedo_loss)
+    loss = dr.mean(bsdf_loss)
     dr.backward(scaler.scale(loss))
     scaler.step(opt)
     avg_loss = loss
@@ -140,15 +164,15 @@ def main():
         # gather first 5000 samples for training
     # train_set = np.array([training_set.get for _ in range(1000)])
 
-    encoder_input_size = 5
-    encoder_output_size = 4
+    encoder_input_size = 1 + 1 + 3 + 3  # metalness, roughness, albedo(3), normal(3)
+    encoder_output_size = 8
 
     encoder_network = nn.Sequential(
-        nn.Linear(encoder_input_size, 16),
+        nn.Linear(encoder_input_size, 32),
         nn.ReLU(),
-        nn.Linear(16, 16),
+        nn.Linear(32, 32),
         nn.ReLU(),
-        nn.Linear(16, encoder_output_size),
+        nn.Linear(32, encoder_output_size),
     )
     
     
@@ -157,17 +181,15 @@ def main():
 
     # 2 shading frames 3x3 matrices flattened = 18
     shading_frame_network = nn.Sequential(
-        nn.Linear(encoder_output_size, 18)
+        nn.Linear(encoder_output_size, 6),
     )
     
     net = nn.Sequential(
-        nn.Linear(encoder_output_size + 6, 64),
-        nn.ReLU(),
-        nn.Linear(64, 32),
+        nn.Linear(encoder_output_size + 6, 32),
         nn.ReLU(),
         nn.Linear(32, 32),
         nn.ReLU(),
-        nn.Linear(32, 6),
+        nn.Linear(32, 3),
         nn.Exp(),
     )
 
@@ -191,17 +213,30 @@ def main():
         rng=rng
     )
     
+    shading_frame_network = shading_frame_network.alloc(
+        dtype=tranining_type,
+        size=-1,
+        rng=rng
+    )
     
     weights, net = nn.pack(net, layout='training')
     
     encoder_weights, encoder_network = nn.pack(encoder_network, layout='training')
 
-    
+    shading_frame_weights, shading_frame_network = nn.pack(shading_frame_network, layout='training')
 
     dr.enable_grad(weights)
     dr.enable_grad(encoder_weights)
+    dr.enable_grad(shading_frame_weights)
 
-    opt = Adam(lr=1e-4, params={'weights': drad.Float32(weights), 'encoder_weights': drad.Float32(encoder_weights)})
+    opt = Adam(
+        lr=1e-4, 
+        params={
+            'weights': drad.Float32(weights), 
+            'encoder_weights': drad.Float32(encoder_weights),
+            'shading_frame_weights': drad.Float32(shading_frame_weights)
+            }
+        )
     scaler = GradScaler()
 
     res = 256
@@ -212,18 +247,20 @@ def main():
     save_every = 5
     save_folder = "trained_models/"
     run = "run1/"
-    epochs = 100000
+    epochs = 5000
 
     generator = dr.rng(seed=drad.UInt(0))
     
     pbar = tqdm.tqdm( desc="Epoch Training Progress", unit="sample", total=epochs)
-    print_every = 10000
+    print_every = 1000
     loss = drad.Float32(0.0)
-    
+    dr.disable_grad(mesh, _metal_tex, _rough_tex, _base_tex, _normal_tex)
+    # dr.set_log_level(dr.LogLevel.Info)
     for epoch in range(epochs):
-        loss += run_epoch(net, encoder_network, opt, weights, encoder_weights, scaler, mesh, _metal_tex, _rough_tex, _base_tex, generator=generator) 
+        i = dr.opaque(drad.Int,epoch)
+        loss += run_epoch(net, encoder_network, shading_frame_network, opt, weights, encoder_weights, shading_frame_weights, scaler, mesh, _metal_tex, _rough_tex, _base_tex, _normal_tex, generator=generator) 
 
-        if epoch != 0 and epoch % print_every == 0:
+        if i != 0 and i % print_every == 0:
             pbar.update(print_every)
             pbar.set_postfix({'loss': loss / print_every})
             loss = drad.Float32(0.0)
@@ -243,8 +280,8 @@ def main():
     
     dr.disable_grad(weights)
     dr.disable_grad(encoder_weights)
-    
-    neural_bsdf.add_model(net, encoder_network)
+    dr.disable_grad(shading_frame_weights)
+    neural_bsdf.add_model(net, encoder_network, shading_frame_network)
     scene_dict = {
 		'type': 'scene',
         'integrator': {
@@ -298,7 +335,10 @@ def main():
     dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
     dr.set_flag(dr.JitFlag.SymbolicLoops, False)
     
-    image = mi.render(s, spp=32)
+    
+    image = mi.render(s, spp=64, seed=np.random.randint(0, 10000)) / 11.0
+    for i in range(10):
+        image += mi.render(s, spp=64, seed=np.random.randint(0, 10000)) / 11.0
     
     
     print("Neural BSDF loaded.")

@@ -3,7 +3,7 @@ import mitsuba as mi
 
 obj_file = "data/lubricant_spray_1k.obj"
 texture_folder = "data/textures/"
-mi.set_variant('scalar_rgb')  # CPU variant - more stable
+mi.set_variant('llvm_ad_rgb')  # CPU variant - more stable
 
 scene = mi.load_dict({
     'type': 'scene',
@@ -20,8 +20,8 @@ scene = mi.load_dict({
 			'fov': 45,
 			'film': {
 				'type': 'hdrfilm',
-				'width': 400,
-				'height': 400,
+				'width': 1024,
+				'height': 1024,
 				'rfilter': {'type': 'box'}
 			}
 		},

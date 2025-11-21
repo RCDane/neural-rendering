@@ -56,13 +56,11 @@ def sample_face_uvs_multiple(face_id : dr.auto.ad.UInt, mesh : mi.Mesh, rng : dr
 
 # vertex_array_ordered = mi.Vector3f(dr.gather(dr.auto.ad.Float, vertices, faces))
 
-def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_tex, rough_tex, base_tex, generator : dr.random.Generator = None):
-    if generator is None:
-        generator = dr.rng()
+def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_tex, rough_tex, base_tex, normal_tex, generator : dr.random.Generator = None):
+    
     faces = mesh.faces_buffer()
 
     face_count = dr.width(faces) // 3
-    assert face_count == mesh.face_count()
 
     indices = dr.arange(dr.auto.ad.UInt, face_count)
     areas = calculate_face_area(indices, mesh)
@@ -84,10 +82,11 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
 
     bsdf = mesh.bsdf()
 
-    si = mesh.eval_parameterization(mi.Point2f(samples_multiple), mi.RayFlags.All)
+    si = mesh.eval_parameterization(mi.Point2f(samples_multiple), mi.RayFlags.UV)
 
     metalness = metal_tex.eval(si)
     roughness = rough_tex.eval(si)
+    normal = normal_tex.eval(si)
     albedo = base_tex.eval(si)
 
     wi_local = random_wi_sample(rng, dr.width(samples_multiple))
@@ -96,8 +95,8 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
 
     ctx = mi.BSDFContext()
     bsdf_val = bsdf.eval(ctx, si, wo_local)
-    # dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo)
-    return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo
+    dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, normal)
+    return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo,normal
 
 
 def test():

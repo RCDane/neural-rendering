@@ -68,9 +68,13 @@ class NeuralBSDF(mi.BSDF):
         # # Report supported flags
         self._flags = mi.BSDFFlags.Diffuse | mi.BSDFFlags.FrontSide
 
-    def add_model(self, model: dr.nn.Module, encoder_model: dr.nn.Module = None):
+    def add_model(self, 
+                  model: dr.nn.Module, 
+                  encoder_model: dr.nn.Module = None,
+                  shading_frame_model: dr.nn.Module = None):
         self.model = model
         self.encoder_model = encoder_model
+        self.shading_frame_model = shading_frame_model
     def flags(self) -> mi.BSDFFlags:
         return self._flags
 
@@ -95,22 +99,46 @@ class NeuralBSDF(mi.BSDF):
         # Evaluate (possibly textured) parameters
         
         base_color = self.base_color.eval(si)
+        normal_map = self.normal_map.eval(si)
         roughness = self.roughness.eval_1(si)
         metallic  = self.metallic.eval_1(si)
         
-        dr.eval(base_color, roughness, metallic)
+        dr.eval(base_color, roughness, metallic, normal_map)
         roughness_val = dr.reshape(drad.TensorXf16(roughness), (1, -1))
         metallic_val  = dr.reshape(drad.TensorXf16(metallic), (1, -1))
         wi_local = dr.reshape(drad.TensorXf16(wi),(3,-1))
         wo_local = dr.reshape(drad.TensorXf16(wo),(3,-1))
         
         
+            
+        
         base_color_val = drad.TensorXf16(base_color)
+        normal_val = drad.TensorXf16(normal_map)
         if self.encoder_model is not None:
-            encoded_texel = self.encoder_model(dr.nn.CoopVec(metallic_val, roughness_val, *drad.TensorXf16(base_color)))
-            encoded_texel = drad.TensorXf16(encoded_texel)
+            encoded_texel = self.encoder_model(dr.nn.CoopVec(metallic_val, roughness_val, *drad.TensorXf16(base_color), *normal_val))
+            texel_tensor = drad.TensorXf16(encoded_texel)
+            
+            if self.shading_frame_model is not None:
+                pred_fram = drad.TensorXf(self.shading_frame_model(encoded_texel))
+                
+                sh_n = drad.Array3f(pred_fram[:3])
+                sh_t = drad.Array3f(pred_fram[3:])
+                sh_b = dr.cross(sh_n, sh_t)
+                
+                shading_frame = drad.Matrix3f16(sh_n, sh_t, sh_b)
+                
+                
+                
+                
+                wi_transformed = dr.matmul(shading_frame, drad.Array3f16(wi_local))
+                wo_transformed = dr.matmul(shading_frame, drad.Array3f16(wo_local))
+                
+                wi_local = drad.TensorXf16(wi_transformed)
+                wo_local = drad.TensorXf16(wo_transformed)
+            
+            
             input_concat = dr.concat([wi_local, wo_local,
-                                    encoded_texel], axis=0)
+                                    texel_tensor], axis=0)
             input = dr.nn.CoopVec(*input_concat)
         else:
             input_concat = dr.concat([wi_local, wo_local,
