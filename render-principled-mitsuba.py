@@ -20,8 +20,8 @@ scene = mi.load_dict({
 			'fov': 45,
 			'film': {
 				'type': 'hdrfilm',
-				'width': 1024,
-				'height': 1024,
+				'width': 800,
+				'height': 800,
 				'rfilter': {'type': 'box'}
 			}
 		},

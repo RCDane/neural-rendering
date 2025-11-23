@@ -33,6 +33,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Calculate the NVIDIA FLIP metric between two images.")
     parser.add_argument("image1", type=str, help="Path to the first PNG image.")
     parser.add_argument("image2", type=str, help="Path to the second PNG image.")
+    parser.add_argument("--output", type=str, default="flip_result.png", help="Path to save the FLIP distance map image.")
     args = parser.parse_args()
 
     flip_map, flip_mean = calculate_flip_metric(args.image1, args.image2)
@@ -41,4 +42,5 @@ if __name__ == "__main__":
     plt.imshow(flip_map, cmap='hot')
     plt.colorbar()
     plt.title('FLIP Distance Map')
+    plt.savefig(args.output)
     plt.show()

@@ -95,8 +95,9 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
 
     ctx = mi.BSDFContext()
     bsdf_val = bsdf.eval(ctx, si, wo_local)
-    dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, normal)
-    return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo,normal
+    pdf = bsdf.pdf(ctx, si, wi_local)
+    dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, normal, pdf)
+    return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo,normal, pdf
 
 
 def test():

@@ -121,17 +121,21 @@ class NeuralBSDF(mi.BSDF):
             if self.shading_frame_model is not None:
                 pred_fram = drad.TensorXf(self.shading_frame_model(encoded_texel))
                 
-                sh_n = drad.Array3f(pred_fram[:3])
-                sh_t = drad.Array3f(pred_fram[3:])
-                sh_b = dr.cross(sh_n, sh_t)
+                sh1_n = drad.Array3f(pred_fram[0:3])
+                sh1_t = drad.Array3f(pred_fram[3:6])
+                sh2_n = drad.Array3f(pred_fram[6:9])
+                sh2_t = drad.Array3f(pred_fram[9:12])
                 
-                shading_frame = drad.Matrix3f16(sh_n, sh_t, sh_b)
+                sh1_b = dr.cross(sh1_n, sh1_t)
+                sh2_b = dr.cross(sh2_n, sh2_t)
+                
+                shading_frame1 = drad.Matrix3f16(sh1_n, sh1_t, sh1_b)
+                shading_frame2 = drad.Matrix3f16(sh2_n, sh2_t, sh2_b)
                 
                 
                 
-                
-                wi_transformed = dr.matmul(shading_frame, drad.Array3f16(wi_local))
-                wo_transformed = dr.matmul(shading_frame, drad.Array3f16(wo_local))
+                wi_transformed = dr.matmul(shading_frame1, drad.Array3f16(wi_local))
+                wo_transformed = dr.matmul(shading_frame2, drad.Array3f16(wo_local))
                 
                 wi_local = drad.TensorXf16(wi_transformed)
                 wo_local = drad.TensorXf16(wo_transformed)
@@ -163,8 +167,7 @@ class NeuralBSDF(mi.BSDF):
             wo: mi.Vector3f, active=True) -> mi.Float:
         cos_theta = mi.Frame3f.cos_theta(wo)
         inv_pi = 1.0 / np.pi
-        return mi.Float(dr.select(cos_theta > 0, cos_theta * inv_pi, 0.0))
-
+        return mi.Float(dr.select(cos_theta > 0, 1.0, 0.0))
     def sample(self, ctx: mi.BSDFContext, si: mi.SurfaceInteraction3f,
                sample1: mi.Float, sample2: mi.Point2f, active=True):
         # Cosine-weighted hemisphere using sample2
@@ -179,7 +182,7 @@ class NeuralBSDF(mi.BSDF):
 
         f_val = self.eval(ctx, si, wo, active)
         cos_theta = mi.Frame3f.cos_theta(wo)
-        pdf_val = dr.select(cos_theta > 0, cos_theta * (1.0 / np.pi), 0.0)
+        pdf_val = dr.select(cos_theta > 0, 1.0, 0.0)
 
         bs = mi.BSDFSample3f()
         bs.wo = wo
@@ -190,7 +193,7 @@ class NeuralBSDF(mi.BSDF):
 
         weight = mi.Color3f(0.0)
         valid = active & (cos_theta > 0) & (pdf_val > 0)
-        weight = mi.Color3f(dr.select(valid, f_val * (cos_theta / (pdf_val + 1e-8)), mi.Color3f(0.0)))
+        weight = mi.Color3f(dr.select(valid, f_val, mi.Color3f(0.0)))
         return (bs, weight)
 
     def traverse(self, callback):
