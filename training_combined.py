@@ -175,6 +175,10 @@ def parse_arguments():
     return args
 
 
+
+
+
+
 def render_image(scene : mi.Scene, expected_samples: int):
     dr.set_flag(dr.JitFlag.SymbolicCalls, False)
     dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
@@ -183,7 +187,7 @@ def render_image(scene : mi.Scene, expected_samples: int):
     
     
     
-    samples_per_pass = 32
+    samples_per_pass = 16
     
     num_passes = float(expected_samples // samples_per_pass)
     
@@ -270,6 +274,16 @@ def main():
     # )
 
     
+    
+    importance_sampling_network = nn.Sequential(
+        nn.Linear(encoder_output_size + 3, 32),
+        nn.ReLU(),
+        nn.Linear(32, 32),
+        nn.ReLU(),
+        nn.Linear(32, 32),
+        nn.ReLU(),
+        nn.Linear(32, 9),  # alpha_x, alpha_y, rho, slopeSpec(2x), slopeDiff(2x), weightSpec, weightDiff
+    )
     
 
     rng = dr.rng(seed=drad.UInt(0))

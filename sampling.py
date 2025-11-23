@@ -100,6 +100,106 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
     return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo,normal, pdf
 
 
+def sample_specular(wi: mi.Vector3f,
+                    alpha: mi.Vector3f,
+                    slope: mi.Vector2f,
+                    u: mi.Vector2f):
+    rho = alpha.z
+    sqrt_one_minus_rho = dr.sqrt(1.0 - rho * rho)
+
+    denom = dr.sqrt(1.0 - u.x)
+    s = dr.sqrt(u.x) / denom
+
+    phi = (2.0 * dr.pi) * u.y
+    sx_std = s * dr.cos(phi)
+    sy_std = s * dr.sin(phi)
+
+    sx = alpha.x * sx_std
+    sy = alpha.y * (rho * sx_std + sqrt_one_minus_rho * sy_std)
+
+    sx += slope.x
+    sy += slope.y
+
+    wh = dr.normalize(mi.Vector3f(-sx, -sy, 1.0))
+    return 2.0 * dr.dot(wi, wh) * wh - wi
+
+
+def sample_diffuse(slope: mi.Vector2f,
+                   u: mi.Vector2f):
+    wo_local = mi.warp.square_to_cosine_hemisphere(mi.Point2f(u))
+    n = dr.normalize(mi.Vector3f(-slope.x, -slope.y, 1.0))
+    frame = mi.Frame3f(n)
+    return frame.to_world(wo_local)
+
+def pdf_diffuse(slope: mi.Vector2f, u: mi.Vector2f):
+    n = dr.normalize(mi.Vector3f(-slope.x, -slope.y, 1.0))
+    frame = mi.Frame3f(n)
+    wo_local = frame.to_local(u)
+    return wo_local.z / dr.pi
+
+def pdf_specular(wi, wo, alpha, slope):
+    eps = 1e-6
+    wh = dr.normalize(wi + wo)
+    sign = dr.select(wh.z >= 0, 1.0, -1.0)
+    wh *= sign
+
+    cos_theta = wh.z
+    invalid = cos_theta <= 1e-4
+
+    sx = -wh.x / dr.maximum(cos_theta, eps)
+    sy = -wh.y / dr.maximum(cos_theta, eps)
+
+    sx -= slope.x
+    sy -= slope.y
+
+    rho = alpha.z
+    one_minus_rho2 = dr.maximum(0.0, 1.0 - rho * rho)
+    sqrt_one_minus_rho = dr.sqrt(one_minus_rho2)
+
+    normalization = dr.rcp(dr.maximum(alpha.x * alpha.y * sqrt_one_minus_rho, eps))
+
+    sx_std = sx / alpha.x
+    sy_std = (alpha.x * sy - rho * alpha.y * sx) * normalization
+
+    r2 = sx_std * sx_std + sy_std * sy_std
+    p22_std = dr.rcp(dr.pi * dr.square(1.0 + r2))
+    p22 = p22_std * normalization
+
+    pdf_h = p22 / dr.square(cos_theta) / cos_theta
+
+    abs_dot = dr.abs(dr.dot(wi, wh))
+    invalid |= abs_dot <= eps
+
+    pdf = pdf_h / (4.0 * dr.maximum(abs_dot, eps))
+    return dr.select(invalid, dr.zeros_like(pdf), pdf)
+
+def sample_analytic(
+    alpha : dr.auto.ad.Array3f, 
+    slopeSpec : dr.auto.ad.Array2f, 
+    slopeDiff : dr.auto.ad.Array2f,
+    weightSpec : dr.auto.ad.Float,
+    wi : dr.auto.ad.Array3f,
+    u : dr.auto.ad.Array2f):
+    # wo
+    
+    if u.x < weightSpec:
+        u.x /= weightSpec
+        wo = sample_specular(wi, alpha, slopeSpec, u)
+    else:
+        u.x = (u.x - weightSpec) / (1 - weightSpec)
+        wo = sample_diffuse(slopeDiff, u)
+        
+    pdf = dr.auto.ad.Float(0.0)
+    pdf += weightSpec * pdf_specular(wo, wi, alpha, slopeSpec)
+    pdf += (1 - weightSpec) * pdf_diffuse(wo, wi, alpha, slopeDiff)
+    return wo, pdf
+
+
+
+
+
+
+
 def test():
 
     OBJ = "data/lubricant_spray_1k.obj"
