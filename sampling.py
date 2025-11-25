@@ -97,7 +97,7 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
     bsdf_val = bsdf.eval(ctx, si, wo_local)
     pdf = bsdf.pdf(ctx, si, wi_local)
     dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, normal, pdf)
-    return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo,normal, pdf
+    return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo,normal, pdf, bsdf
 
 
 def sample_specular(wi: mi.Vector3f,
@@ -172,22 +172,42 @@ def pdf_specular(wi, wo, alpha, slope):
 
     pdf = pdf_h / (4.0 * dr.maximum(abs_dot, eps))
     return dr.select(invalid, dr.zeros_like(pdf), pdf)
-
+dr.syntax()
 def sample_analytic(
-    alpha : dr.auto.ad.Array3f, 
-    slopeSpec : dr.auto.ad.Array2f, 
-    slopeDiff : dr.auto.ad.Array2f,
+    alpha : mi.Vector3f, 
+    slopeSpec : mi.Vector2f, 
+    slopeDiff : mi.Vector2f,
     weightSpec : dr.auto.ad.Float,
-    wi : dr.auto.ad.Array3f,
-    u : dr.auto.ad.Array2f):
+    wi : mi.Vector3f,
+    u : mi.Point2f):
     # wo
+#     print("u:", u.x)
+#     print(weightSpec)
     
-    if u.x < weightSpec:
-        u.x /= weightSpec
-        wo = sample_specular(wi, alpha, slopeSpec, u)
-    else:
-        u.x = (u.x - weightSpec) / (1 - weightSpec)
-        wo = sample_diffuse(slopeDiff, u)
+#     ux, wo = dr.if_stmt(
+#        args=(weightSpec, alpha, slopeSpec,u),
+#        cond=u.x < weightSpec,
+#        true_fn=lambda alpha, slopeSpec, weightSpec, wi,u: (
+#             u.x /= weightSpec
+#             wo = sample_specular(wi, alpha, slopeSpec, u)
+#            ),
+#        false_fn=lambda i, x, y: (x, y + 1)
+#    )
+    
+#     dr.if_stmt()
+
+    cond = u.x < weightSpec
+    
+    u_new = dr.select(cond, mi.Point2f(u.x / weightSpec, u.y), mi.Point2f((u.x - weightSpec) / (1 - weightSpec), u.y))
+    wo = dr.select(cond, sample_specular(wi, alpha, slopeSpec, u_new),
+                          sample_diffuse(slopeDiff, u_new))
+    
+    # if u.x < weightSpec:
+    #     u.x /= weightSpec
+    #     wo = sample_specular(wi, alpha, slopeSpec, u)
+    # else:
+    #     u.x = (u.x - weightSpec) / (1 - weightSpec)
+    #     wo = sample_diffuse(slopeDiff, u)
         
     pdf = dr.auto.ad.Float(0.0)
     pdf += weightSpec * pdf_specular(wo, wi, alpha, slopeSpec)
