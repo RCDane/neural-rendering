@@ -56,6 +56,58 @@ def sample_face_uvs_multiple(face_id : dr.auto.ad.UInt, mesh : mi.Mesh, rng : dr
 
 # vertex_array_ordered = mi.Vector3f(dr.gather(dr.auto.ad.Float, vertices, faces))
 
+def random_wi_sample(rng: dr.random.Generator, n: int =1):
+    # Cosine-weighted hemisphere sampling
+    sample_wi = mi.Point2f(rng.random(dr.auto.ad.Float, n), rng.random(dr.auto.ad.Float, n))
+    wi_local = mi.warp.square_to_cosine_hemisphere(sample_wi)
+    return wi_local
+
+def generate_batched_uv_samples_for_importance_sampling(mesh: mi.Mesh, num_samples_per_face: int, metal_tex, rough_tex, base_tex, normal_tex, generator : dr.random.Generator = None):
+    
+    faces = mesh.faces_buffer()
+
+    face_count = dr.width(faces) // 3
+
+    indices = dr.arange(dr.auto.ad.UInt, face_count)
+    areas = calculate_face_area(indices, mesh)
+    area_total = dr.sum(areas)
+
+    uv_samples = dr.zeros(dr.auto.ad.Array2f, shape= dr.width(indices))
+    rng = generator
+    # sample = sample_face_uvs(indices, mesh, rng)
+    samples_multiple = sample_face_uvs_multiple(indices, mesh, rng, num_samples_per_face)
+    # dr.eval(samples_multiple)
+
+
+
+
+
+    bsdf = mesh.bsdf()
+
+    si = mesh.eval_parameterization(mi.Point2f(samples_multiple), mi.RayFlags.UV)
+
+    metalness = metal_tex.eval(si)
+    roughness = rough_tex.eval(si)
+    normal = normal_tex.eval(si)
+    albedo = base_tex.eval(si)
+
+    # wi_local = random_wi_sample(rng, dr.width(samples_multiple))
+    # si.wi = wi_local
+
+    # ctx = mi.BSDFContext()
+    
+    # s1 = generator.random(dr.auto.ad.Float, dr.width(samples_multiple))
+    # s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(samples_multiple)), generator.random(dr.auto.ad.Float, dr.width(samples_multiple)))
+    
+    # bs, spectrum = bsdf.sample(ctx, si, s1, s2)
+    # print("spectrum", spectrum)
+    
+    # pdf = bs.pdf
+    # dr.eval(samples_multiple, wi_local, ns, bsdf_val, metalness, roughness, albedo, normal, pdf)
+    dr.eval(samples_multiple, metalness, roughness, albedo, normal, si)
+    return samples_multiple, metalness, roughness, albedo,normal, si
+
+
 def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_tex, rough_tex, base_tex, normal_tex, generator : dr.random.Generator = None):
     
     faces = mesh.faces_buffer()
@@ -73,11 +125,7 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
     # dr.eval(samples_multiple)
 
 
-    def random_wi_sample(rng: dr.random.Generator, n: int =1):
-        # Cosine-weighted hemisphere sampling
-        sample_wi = mi.Point2f(rng.random(dr.auto.ad.Float, n), rng.random(dr.auto.ad.Float, n))
-        wi_local = mi.warp.square_to_cosine_hemisphere(sample_wi)
-        return wi_local
+
 
 
     bsdf = mesh.bsdf()
@@ -94,7 +142,9 @@ def generate_batched_uv_samples(mesh: mi.Mesh, num_samples_per_face: int, metal_
     si.wi = wi_local
 
     ctx = mi.BSDFContext()
+    
     bsdf_val = bsdf.eval(ctx, si, wo_local)
+    
     pdf = bsdf.pdf(ctx, si, wi_local)
     dr.eval(samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo, normal, pdf)
     return samples_multiple, wi_local, wo_local, bsdf_val, metalness, roughness, albedo,normal, pdf, bsdf
@@ -131,11 +181,11 @@ def sample_diffuse(slope: mi.Vector2f,
     frame = mi.Frame3f(n)
     return frame.to_world(wo_local)
 
-def pdf_diffuse(slope: mi.Vector2f, u: mi.Vector2f):
+def pdf_diffuse(slope: mi.Vector2f, wo: mi.Vector3f):
     n = dr.normalize(mi.Vector3f(-slope.x, -slope.y, 1.0))
     frame = mi.Frame3f(n)
-    wo_local = frame.to_local(u)
-    return wo_local.z / dr.pi
+    wo_local = frame.to_local(wo)
+    return dr.maximum(0.0, wo_local.z * dr.inv_pi)
 
 def pdf_specular(wi, wo, alpha, slope):
     eps = 1e-6
@@ -172,47 +222,38 @@ def pdf_specular(wi, wo, alpha, slope):
 
     pdf = pdf_h / (4.0 * dr.maximum(abs_dot, eps))
     return dr.select(invalid, dr.zeros_like(pdf), pdf)
-dr.syntax()
+dr.syntax
 def sample_analytic(
-    alpha : mi.Vector3f, 
-    slopeSpec : mi.Vector2f, 
-    slopeDiff : mi.Vector2f,
-    weightSpec : dr.auto.ad.Float,
-    wi : mi.Vector3f,
-    u : mi.Point2f):
-    # wo
-#     print("u:", u.x)
-#     print(weightSpec)
-    
-#     ux, wo = dr.if_stmt(
-#        args=(weightSpec, alpha, slopeSpec,u),
-#        cond=u.x < weightSpec,
-#        true_fn=lambda alpha, slopeSpec, weightSpec, wi,u: (
-#             u.x /= weightSpec
-#             wo = sample_specular(wi, alpha, slopeSpec, u)
-#            ),
-#        false_fn=lambda i, x, y: (x, y + 1)
-#    )
-    
-#     dr.if_stmt()
+    alpha : dr.auto.ad.Array3f | dr.auto.ad.Array3f16, 
+    slopeSpec : dr.auto.ad.Array2f | dr.auto.ad.Array2f16, 
+    slopeDiff : dr.auto.ad.Array2f | dr.auto.ad.Array2f16,
+    weightSpec : dr.auto.ad.Float | dr.auto.ad.Float16,
+    wi : dr.auto.ad.Array3f | dr.auto.ad.Array3f16,
+    u : dr.auto.ad.Array2f | dr.auto.ad.Array2f16,
+    generator : dr.random.Generator = None):
 
-    cond = u.x < weightSpec
     
-    u_new = dr.select(cond, mi.Point2f(u.x / weightSpec, u.y), mi.Point2f((u.x - weightSpec) / (1 - weightSpec), u.y))
-    wo = dr.select(cond, sample_specular(wi, alpha, slopeSpec, u_new),
-                          sample_diffuse(slopeDiff, u_new))
+    mask = u.x < weightSpec
+    inv_weight_spec = dr.rcp(dr.maximum(weightSpec, 1e-8))
+    inv_weight_diff = dr.rcp(dr.maximum(1.0 - weightSpec, 1e-8))
+
+    u_spec = dr.auto.ad.Array2f(u)
+    u_spec.x = u_spec.x * inv_weight_spec
+    u_diff = dr.auto.ad.Array2f(u)
+    u_diff.x = (u_diff.x - weightSpec) * inv_weight_diff
+
+    wo_spec = sample_specular(wi, alpha, slopeSpec, u_spec)
+    wo_diff = sample_diffuse(slopeDiff, u_diff)
     
-    # if u.x < weightSpec:
-    #     u.x /= weightSpec
-    #     wo = sample_specular(wi, alpha, slopeSpec, u)
-    # else:
-    #     u.x = (u.x - weightSpec) / (1 - weightSpec)
-    #     wo = sample_diffuse(slopeDiff, u)
-        
-    pdf = dr.auto.ad.Float(0.0)
-    pdf += weightSpec * pdf_specular(wo, wi, alpha, slopeSpec)
-    pdf += (1 - weightSpec) * pdf_diffuse(wo, wi, alpha, slopeDiff)
-    return wo, pdf
+
+    wo = dr.select(mask, wo_spec, wo_diff)
+
+    pdf_spec = pdf_specular(wi, wo, alpha, slopeSpec)
+    pdf_diff = pdf_diffuse(slopeDiff, wo)
+    pdf = weightSpec * pdf_spec + (1.0 - weightSpec) * pdf_diff
+    dr.eval(wo_spec, wo_diff, pdf_spec, pdf_diff, pdf)
+    return wo_spec, wo_diff, pdf_spec, pdf_diff, pdf
+
 
 
 

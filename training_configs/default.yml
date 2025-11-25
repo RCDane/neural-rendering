@@ -1,10 +1,12 @@
 run_name: default_experiment
 batch_size: 5000
-epochs: 50000
+importance_epochs: 2000
+decoder_epochs: 2000
 learning_rate: 0.001
 weight_decay: 1e-6
 num_workers: 8
 hidden_dim: 64
+
 data: training_data.npy
 input_shape:
   - ndotl: 1
@@ -17,7 +19,7 @@ input_shape:
 save_dir: checkpoints/run4
 save_interval: 5
 mixed_precision: 'no'
-render_every: 500000
+render_every: 100000
 print_every: 1000
 
 networks:
@@ -29,13 +31,13 @@ networks:
       - ReLU: []
       - Linear: [32, 32]
       - ReLU: []
-      - Linear: [32, 8]
+      - Linear: [32, 12]
   shading_frame:
     layers:
-      - Linear: [8, 12]
+      - Linear: [12, 12]
   bsdf:
     layers:
-      - Linear: [14, 32]
+      - Linear: [18, 32]
       - ReLU: []
       - Linear: [32, 32]
       - ReLU: []

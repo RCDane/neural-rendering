@@ -6,9 +6,12 @@ import drjit as dr
 # dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
 import drjit.auto.ad as drad
 import json
+import sampling
 # mi.set_variant("scalar_rgb")
 
-
+dr.syntax
+def sigmoid(x):
+    return 1 / (1 + dr.exp(-x))
 
 class NeuralBSDF(mi.BSDF):
     """
@@ -71,14 +74,48 @@ class NeuralBSDF(mi.BSDF):
     def add_model(self, 
                   model: dr.nn.Module, 
                   encoder_model: dr.nn.Module = None,
-                  shading_frame_model: dr.nn.Module = None):
+                  shading_frame_model: dr.nn.Module = None,
+                  importance_sampling_model: dr.nn.Module = None):
         self.model = model
         self.encoder_model = encoder_model
         self.shading_frame_model = shading_frame_model
+        self.importance_sampling_model = importance_sampling_model
+    
+    def add_texture(self, latent_texture: drad.Texture2f16):
+        self.latent_texture = latent_texture
     def flags(self) -> mi.BSDFFlags:
         return self._flags
 
     
+    def run_shading_frame_model(self, input, wo, wi):
+        
+        
+        if self.shading_frame_model is None:
+            return wi, wo
+        coopVec_input = dr.nn.CoopVec(input)
+        
+        pred_fram = drad.TensorXf(self.shading_frame_model(coopVec_input))
+            
+        sh1_n = drad.Array3f(pred_fram[0:3])
+        sh1_t = drad.Array3f(pred_fram[3:6])
+        sh2_n = drad.Array3f(pred_fram[6:9])
+        sh2_t = drad.Array3f(pred_fram[9:12])
+        
+        sh1_b = dr.cross(sh1_n, sh1_t)
+        sh2_b = dr.cross(sh2_n, sh2_t)
+        
+        shading_frame1 = drad.Matrix3f16(sh1_n, sh1_t, sh1_b)
+        shading_frame2 = drad.Matrix3f16(sh2_n, sh2_t, sh2_b)
+        
+        
+        
+        wi_transformed = dr.matmul(shading_frame1, drad.Array3f16(wi))
+        wo_transformed = dr.matmul(shading_frame2, drad.Array3f16(wo))
+        
+        wi_local = drad.TensorXf16(wi_transformed)
+        wo_local = drad.TensorXf16(wo_transformed)
+        
+        return wi_local, wo_local
 
     
     def eval(self, ctx: mi.BSDFContext,  si: mi.SurfaceInteraction3f,
@@ -90,11 +127,7 @@ class NeuralBSDF(mi.BSDF):
         cos_theta_o = mi.Frame3f.cos_theta(wo)
         valid = active & (cos_theta_i > 0) & (cos_theta_o > 0)
 
-        h = dr.normalize(wi + wo)
-        ndotl = cos_theta_i
-        ndotv = cos_theta_o
-        ndoth = h.z
-        ldoth = dr.clamp(dr.dot(wi, h), 0.0, 1.0)
+
 
         # Evaluate (possibly textured) parameters
         
@@ -114,40 +147,40 @@ class NeuralBSDF(mi.BSDF):
         
         base_color_val = drad.TensorXf16(base_color)
         normal_val = drad.TensorXf16(normal_map)
-        if self.encoder_model is not None:
-            encoded_texel = self.encoder_model(dr.nn.CoopVec(metallic_val, roughness_val, *drad.TensorXf16(base_color), *normal_val))
+        
+        coop_vector_input = dr.nn.CoopVec(metallic_val, roughness_val, *drad.TensorXf16(base_color), *normal_val)
+        uses_latent = False
+        
+        if self.encoder_model is not None and self.latent_texture is None:
+            encoded_texel = self.encoder_model(coop_vector_input)
             texel_tensor = drad.TensorXf16(encoded_texel)
             
-            if self.shading_frame_model is not None:
-                pred_fram = drad.TensorXf(self.shading_frame_model(encoded_texel))
-                
-                sh1_n = drad.Array3f(pred_fram[0:3])
-                sh1_t = drad.Array3f(pred_fram[3:6])
-                sh2_n = drad.Array3f(pred_fram[6:9])
-                sh2_t = drad.Array3f(pred_fram[9:12])
-                
-                sh1_b = dr.cross(sh1_n, sh1_t)
-                sh2_b = dr.cross(sh2_n, sh2_t)
-                
-                shading_frame1 = drad.Matrix3f16(sh1_n, sh1_t, sh1_b)
-                shading_frame2 = drad.Matrix3f16(sh2_n, sh2_t, sh2_b)
-                
-                
-                
-                wi_transformed = dr.matmul(shading_frame1, drad.Array3f16(wi_local))
-                wo_transformed = dr.matmul(shading_frame2, drad.Array3f16(wo_local))
-                
-                wi_local = drad.TensorXf16(wi_transformed)
-                wo_local = drad.TensorXf16(wo_transformed)
+            wi, wo = self.run_shading_frame_model(texel_tensor, wi_local, wo_local)
             
-            
-            input_concat = dr.concat([wi_local, wo_local,
+            input_concat = dr.concat([wi, wo,
                                     texel_tensor], axis=0)
             input = dr.nn.CoopVec(*input_concat)
+            uses_latent = True
+        elif self.latent_texture is not None:
+            latent_vals = self.latent_texture.eval(si.uv)
+            
+            wi, wo = self.run_shading_frame_model(drad.TensorXf16(latent_vals), wi_local, wo_local)
+            
+            input_concat = dr.concat([wi, wo,
+                                    drad.TensorXf16(latent_vals)], axis=0)
+            input = dr.nn.CoopVec(*input_concat)
+            uses_latent = True
         else:
-            input_concat = dr.concat([wi_local, wo_local,
+            
+            wi, wo = self.run_shading_frame_model(coop_vector_input, wi_local, wo_local)
+            
+            input_concat = dr.concat([wi, wo,
                                     metallic_val, roughness_val, base_color_val], axis=0)
             input = dr.nn.CoopVec(*input_concat)
+            uses_latent = False
+            
+        
+            
         # input = dr.nn.CoopVec(wi_local, wo_local,
         #                          metallic_val, roughness_val, base_color_val)
         
@@ -171,28 +204,62 @@ class NeuralBSDF(mi.BSDF):
     def sample(self, ctx: mi.BSDFContext, si: mi.SurfaceInteraction3f,
                sample1: mi.Float, sample2: mi.Point2f, active=True):
         # Cosine-weighted hemisphere using sample2
-        u1 = sample2.x
-        u2 = sample2.y
-        r = dr.sqrt(u1)
-        phi = 2.0 * dr.pi * u2
-        x = r * dr.cos(phi)
-        y = r * dr.sin(phi)
-        z = dr.sqrt(dr.maximum(0.0, 1.0 - u1))
-        wo = mi.Vector3f(x, y, z)
+        
+        if self.encoder_model is not None and self.importance_sampling_model is not None:
+            
+            base_color = self.base_color.eval(si)
+            normal_map = self.normal_map.eval(si)
+            roughness = self.roughness.eval_1(si)
+            metallic  = self.metallic.eval_1(si)
+            
+            dr.eval(base_color, roughness, metallic, normal_map)
+            roughness_val = dr.reshape(drad.TensorXf16(roughness), (1, -1))
+            metallic_val  = dr.reshape(drad.TensorXf16(metallic), (1, -1))
+            wi_local = dr.reshape(drad.TensorXf16(si.wi),(3,-1))
+            normal_val = drad.TensorXf16(normal_map)
+            encoded_texel = self.encoder_model(dr.nn.CoopVec(metallic_val, roughness_val, *drad.TensorXf16(base_color), *normal_val))
+            
+            importance_input = dr.nn.CoopVec(*encoded_texel, *wi_local)
+            params = self.importance_sampling_model(importance_input)
+            decoded = drad.TensorXf(params)
 
-        f_val = self.eval(ctx, si, wo, active)
+            alpha = mi.Vector3f(dr.exp(decoded[:3]-3.0))
+            slope_spec = mi.Vector2f(dr.sinh(decoded[3:5]))
+            slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
+            weight_spec = drad.Float(sigmoid(decoded[7]))
+
+            wo_spec, wo_diff, pdf_spec, pdf_diff, pdf_pred = sampling.sample_analytic(
+                drad.Array3f16(alpha), drad.Array2f16(slope_spec), drad.Array2f16(slope_diff), drad.Float16(weight_spec),
+                drad.Array3f16(wi_local), drad.Array2f16(sample2)
+            )
+            
+            is_specular = sample1 < weight_spec
+            wo = dr.select(is_specular, wo_spec, wo_diff)
+            pdf = dr.select(is_specular, pdf_spec, pdf_diff)
+        else:     
+            u1 = sample2.x
+            u2 = sample2.y
+            r = dr.sqrt(u1)
+            phi = 2.0 * dr.pi * u2
+            x = r * dr.cos(phi)
+            y = r * dr.sin(phi)
+            z = dr.sqrt(dr.maximum(0.0, 1.0 - u1))
+            wo = mi.Vector3f(x, y, z)
+            pdf = 1.0
+
+        f_val = self.eval(ctx, si, wo, active) / pdf
         cos_theta = mi.Frame3f.cos_theta(wo)
-        pdf_val = dr.select(cos_theta > 0, 1.0, 0.0)
+        # pdf_val = dr.select(cos_theta > 0, 1.0, 0.0)
 
         bs = mi.BSDFSample3f()
         bs.wo = wo
-        bs.pdf = pdf_val
+        bs.pdf = dr.select(active, pdf, 0.0)
         bs.sampled_type = self._flags & mi.BSDFFlags.Diffuse
         bs.sampled_component = 0
         bs.eta = 1.0
 
         weight = mi.Color3f(0.0)
-        valid = active & (cos_theta > 0) & (pdf_val > 0)
+        valid = active & (cos_theta > 0) & (pdf > 0)
         weight = mi.Color3f(dr.select(valid, f_val, mi.Color3f(0.0)))
         return (bs, weight)
 
