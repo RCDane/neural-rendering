@@ -222,14 +222,15 @@ def pdf_specular(wi, wo, alpha, slope):
 
     pdf = pdf_h / (4.0 * dr.maximum(abs_dot, eps))
     return dr.select(invalid, dr.zeros_like(pdf), pdf)
+from typing import Union
 dr.syntax
 def sample_analytic(
-    alpha : dr.auto.ad.Array3f | dr.auto.ad.Array3f16, 
-    slopeSpec : dr.auto.ad.Array2f | dr.auto.ad.Array2f16, 
-    slopeDiff : dr.auto.ad.Array2f | dr.auto.ad.Array2f16,
-    weightSpec : dr.auto.ad.Float | dr.auto.ad.Float16,
-    wi : dr.auto.ad.Array3f | dr.auto.ad.Array3f16,
-    u : dr.auto.ad.Array2f | dr.auto.ad.Array2f16,
+    alpha : Union[dr.auto.ad.Array3f, dr.auto.ad.Array3f16], 
+    slopeSpec : Union[dr.auto.ad.Array2f, dr.auto.ad.Array2f16], 
+    slopeDiff : Union[dr.auto.ad.Array2f, dr.auto.ad.Array2f16],
+    weightSpec : Union[dr.auto.ad.Float, dr.auto.ad.Float16],
+    wi : Union[dr.auto.ad.Array3f, dr.auto.ad.Array3f16],
+    u : Union[dr.auto.ad.Array2f, dr.auto.ad.Array2f16],
     generator : dr.random.Generator = None):
 
     

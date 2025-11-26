@@ -46,7 +46,10 @@ def l1(pred, target, eps=1e-6):
 
 dr.syntax
 def log_l1(pred, target, eps=1e-6):
-    return dr.mean(dr.abs(dr.log(pred + eps) - dr.log(target + eps)))
+    target_safe = dr.maximum(target, eps)
+    pred_safe = dr.maximum(pred, eps)
+    
+    return dr.mean(dr.abs(dr.log(pred_safe) - dr.log(target_safe)))
 
 dr.syntax
 def l2(pred, target):
@@ -77,6 +80,29 @@ def kl_divergence(pred, target, eps=1e-9):
 import tqdm
 import random
 
+def run_shading_frame_network(network, input, wi, wo):
+    frame_vectors = network(input)
+    
+    unpacked_frame_vectors = drad.TensorXf(frame_vectors) 
+    
+    sh1_n = drad.Array3f(unpacked_frame_vectors[:3])
+    sh1_t = drad.Array3f(unpacked_frame_vectors[3:6])
+    sh2_n = drad.Array3f(unpacked_frame_vectors[6:9])
+    sh2_t = drad.Array3f(unpacked_frame_vectors[9:12])
+    
+    
+    sh1_b = dr.cross(sh1_n, sh1_t)
+    sh2_b = dr.cross(sh2_n, sh2_t)
+    unpacked_shading_frame1 = drad.Matrix3f(sh1_n, sh1_t, sh1_b)
+    unpacked_shading_frame2 = drad.Matrix3f(sh2_n, sh2_t, sh2_b)
+    
+    
+    wi_transformed = dr.matmul(unpacked_shading_frame1,drad.Array3f(wi))
+    wo_transformed = dr.matmul(unpacked_shading_frame2,drad.Array3f(wo))
+    dr.eval(wi_transformed, wo_transformed)
+    return wi_transformed, wo_transformed
+
+
 def train_decoder(
     net, 
     encoder_network, 
@@ -93,10 +119,6 @@ def train_decoder(
     _normal_tex, 
     generator,
 ):
-    # avg_loss = drad.Float32(0.0)
-    # dr.disable_grad(avg_loss)
-    # data_length = 1
-    
 
     
     weights[:] = drad.Float16(opt['weights'])
@@ -121,9 +143,6 @@ def train_decoder(
     
     bs, spectrum = bsdf.sample(ctx, si, s1, s2)
     
-
-    is_gloss = dr.select(bs.sampled_type == 3, True, False)
-    # print("bs.pdf", bs.pdf)
     pdf = bs.pdf
     wo_local = bs.wo
 
@@ -137,35 +156,20 @@ def train_decoder(
     
     unpacked_texel = drad.TensorXf16(encoded_texel)
     
-    frame_vectors = shading_frame_network(encoded_texel)
-    
-    unpacked_frame_vectors = drad.TensorXf(frame_vectors) 
-    
-    sh1_n = drad.Array3f(unpacked_frame_vectors[:3])
-    sh1_t = drad.Array3f(unpacked_frame_vectors[3:6])
-    sh2_n = drad.Array3f(unpacked_frame_vectors[6:9])
-    sh2_t = drad.Array3f(unpacked_frame_vectors[9:12])
-    
-    
-    sh1_b = dr.cross(sh1_n, sh1_t)
-    sh2_b = dr.cross(sh2_n, sh2_t)
-    unpacked_shading_frame1 = drad.Matrix3f(sh1_n, sh1_t, sh1_b)
-    unpacked_shading_frame2 = drad.Matrix3f(sh2_n, sh2_t, sh2_b)
-    
-    
-    dr.eval(unpacked_shading_frame1, unpacked_shading_frame2)
+    wi_transformed, wo_transformed = run_shading_frame_network(shading_frame_network, encoded_texel, wi_local, wo_local)
     
 
-    wi_transformed = dr.matmul(unpacked_shading_frame1,drad.Array3f(wi_local))
-    wo_transformed = dr.matmul(unpacked_shading_frame2,drad.Array3f(wo_local))
+
     
     dr.eval(unpacked_texel)
     input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_transformed), *drad.TensorXf16(wo_transformed), *unpacked_texel)
     
     
-    
+    cos_theta_o = dr.maximum(mi.Frame3f.cos_theta(wo_local), 1e-6)
+
+    pdf = dr.maximum(pdf, 1e-6)
     # print(spectrum)
-    target = drad.Array3f(spectrum) 
+    target = drad.Array3f(spectrum)
     pred =  net(input_tensor)
     
     unpacked_pred = drad.TensorXf(pred)
@@ -197,12 +201,7 @@ def train_decoder_and_texture(
     mesh, 
     latent_texture,
     generator : dr.random.Generator
-):
-
-    latent_texture = drad.Texture2f16(opt["texture"])
-    
-
-    
+):  
     weights[:] = drad.Float16(opt['weights'])
     shading_frame_weights[:] = drad.Float16(opt['shading_frame_weights'])
     
@@ -232,87 +231,71 @@ def train_decoder_and_texture(
     latent_vals = latent_texture.eval(si.uv)
     
     
-    
-    frame_vectors = shading_frame_network(nn.CoopVec(drad.TensorXf16(latent_vals)))
-    
-    unpacked_frame_vectors = drad.TensorXf(frame_vectors) 
-    
-    sh1_n = drad.Array3f(unpacked_frame_vectors[:3])
-    sh1_t = drad.Array3f(unpacked_frame_vectors[3:6])
-    sh2_n = drad.Array3f(unpacked_frame_vectors[6:9])
-    sh2_t = drad.Array3f(unpacked_frame_vectors[9:12])
+    frame_input = nn.CoopVec(drad.TensorXf16(latent_vals))
     
     
-    sh1_b = dr.cross(sh1_n, sh1_t)
-    sh2_b = dr.cross(sh2_n, sh2_t)
-    unpacked_shading_frame1 = drad.Matrix3f(sh1_n, sh1_t, sh1_b)
-    unpacked_shading_frame2 = drad.Matrix3f(sh2_n, sh2_t, sh2_b)
+    wi_transformed, wo_transformed = run_shading_frame_network(shading_frame_network, frame_input, wi_local, wo_local)
     
     
-    dr.eval(unpacked_shading_frame1, unpacked_shading_frame2)
-    
-
-    wi_transformed = dr.matmul(unpacked_shading_frame1,drad.Array3f(wi_local))
-    wo_transformed = dr.matmul(unpacked_shading_frame2,drad.Array3f(wo_local))
+    print("latent_vector:", latent_vals)
     
     input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_transformed), *drad.TensorXf16(wo_transformed), *drad.TensorXf16(latent_vals))
     
-    
+    pdf = bs.pdf
+    cos_theta_o = dr.maximum(mi.Frame3f.cos_theta(wo_local), 1e-6)
     
     # print(spectrum)
-    target = drad.Array3f(spectrum) 
-    pred =  net(input_tensor)
+    target = drad.Array3f(spectrum )
     
+
+    pred =  net(input_tensor)
+
     unpacked_pred = drad.TensorXf(pred)
 
     unpacked_color = drad.Array3f(unpacked_pred[:3])
-    
-    
+    print("unpacked_color:", unpacked_color)
+
 
     bsdf_loss = log_l1(unpacked_color, target)
+    print("bsdf_loss:", dr.mean(bsdf_loss))
     loss = dr.mean(bsdf_loss) 
+    print("total loss:", loss)
 
-    dr.backward(scaler.scale(loss))
-    scaler.step(opt)
-    avg_loss = loss
     # i += 1
-    return avg_loss
+    return loss
 
 
 dr.syntax
 def train_sampler(
-    importance_net, 
+    importance_net,
     opt, 
     importance_weights, 
     scaler, 
-    mesh, 
-    _metal_tex, 
-    _rough_tex, 
-    _base_tex, 
-    _normal_tex,
+    mesh,
     latent_texture,
     generator,
     epoch):
 
-    latent_tex = drad.Texture2f16(latent_texture)
+    
     
     importance_weights[:] = drad.Float16(opt['importance_weights'])
     
     
     bsdf : mi.BSDF = mesh.bsdf()
     
-    uv_coords, metalness, roughness, albedo, normal, si = sampling.generate_batched_uv_samples_for_importance_sampling(
-    mesh, 1, _metal_tex, _rough_tex, _base_tex, _normal_tex, generator)
-    
-    
-    wi_local = sampling.random_wi_sample(generator, dr.width(uv_coords))
-    si.wi = wi_local
+    n = latent_texture.shape[0]
+    uvs = generator.random(drad.Array2f, (2, n))
 
+    wi_local = mi.warp.square_to_cosine_hemisphere(uvs)
+    si = mesh.eval_parameterization(mi.Point2f(uvs), mi.RayFlags.UV)
+
+    si.wi = wi_local
+    si.uv = uvs
     ctx = mi.BSDFContext()
     ctx.type_mask = mi.BSDFFlags.All
     
-    s1 = generator.random(dr.auto.ad.Float, dr.width(uv_coords))
-    s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(uv_coords)), generator.random(dr.auto.ad.Float, dr.width(uv_coords)))
+    s1 = generator.random(dr.auto.ad.Float, dr.width(uvs))
+    s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(uvs)), generator.random(dr.auto.ad.Float, dr.width(uvs)))
     
     bs, _ = bsdf.sample(ctx, si, s1, s2)
     
@@ -321,15 +304,11 @@ def train_sampler(
 
     
     
-    # metalness = drad.TensorXf16(metalness.x)
-    # roughness = drad.TensorXf16(roughness.x)
-    # albedo = drad.TensorXf16(albedo.array)
 
-    # encoded_texel = encoder_network(dr.nn.CoopVec(metalness, roughness, *albedo, *normal))
-    latent_vals = latent_tex.eval(si.uv)
+    latent_vals = latent_texture.eval(si.uv)
     unpacked_texel = drad.TensorXf16(latent_vals)
     
-    importance_input = dr.nn.CoopVec(*unpacked_texel, wi_local)
+    importance_input = dr.nn.CoopVec(*drad.TensorXf16(wi_local),*unpacked_texel)
     
     params = importance_net(importance_input)
     decoded = drad.TensorXf(params)
@@ -339,171 +318,172 @@ def train_sampler(
     slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
     weight_spec = drad.Float(sigmoid(decoded[7]))
     
+    s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(uvs)), generator.random(dr.auto.ad.Float, dr.width(uvs)))
 
-    pdf_spec_eval = sampling.pdf_specular(si.wi, bs.wo, alpha, slope_spec)
-    pdf_diff_eval = sampling.pdf_diffuse(slope_diff, bs.wo)
+    wo_spec, wo_diff, pdf_spec, pdf_diff, pdf_pred = sampling.sample_analytic(
+        drad.Array3f16(alpha), drad.Array2f16(slope_spec), drad.Array2f16(slope_diff), drad.Float16(weight_spec),
+        drad.Array3f16(wi_local), drad.Array2f16(s2)
+    )
     
     # Mix them using the predicted weight
-    pdf_pred_at_gt = weight_spec * pdf_spec_eval + (1.0 - weight_spec) * pdf_diff_eval
+    pdf_pred_at_gt = weight_spec * pdf_spec + (1.0 - weight_spec) * pdf_diff
     dr.eval(pdf_pred_at_gt)
     
     
-    pdf_loss = kl_divergence(pdf, pdf_pred_at_gt)
-    dr.backward(scaler.scale(pdf_loss))
-    scaler.step(opt)
-    pdf_loss = dr.mean(pdf_loss)
+    pdf_loss = log_l1(pdf, pdf_pred_at_gt)
+
     # i += 1
     return pdf_loss
 
 
-dr.syntax
-def run_epoch(
-    net, 
-    encoder_network, 
-    shading_frame_network, 
-    importance_net, 
-    opt, 
-    weights, 
-    encoder_weights, 
-    shading_frame_weights, 
-    importance_weights, 
-    scaler, 
-    mesh, 
-    _metal_tex, 
-    _rough_tex, 
-    _base_tex, 
-    _normal_tex, 
-    generator,
-    epoch):
-    # avg_loss = drad.Float32(0.0)
-    # dr.disable_grad(avg_loss)
-    # data_length = 1
+# dr.syntax
+# def run_epoch(
+#     net, 
+#     encoder_network, 
+#     shading_frame_network, 
+#     importance_net, 
+#     opt, 
+#     weights, 
+#     encoder_weights, 
+#     shading_frame_weights, 
+#     importance_weights, 
+#     scaler, 
+#     mesh, 
+#     _metal_tex, 
+#     _rough_tex, 
+#     _base_tex, 
+#     _normal_tex, 
+#     generator,
+#     epoch):
+#     # avg_loss = drad.Float32(0.0)
+#     # dr.disable_grad(avg_loss)
+#     # data_length = 1
     
 
     
-    weights[:] = drad.Float16(opt['weights'])
-    encoder_weights[:] = drad.Float16(opt['encoder_weights'])
-    shading_frame_weights[:] = drad.Float16(opt['shading_frame_weights'])
-    importance_weights[:] = drad.Float16(opt['importance_weights'])
+#     weights[:] = drad.Float16(opt['weights'])
+#     encoder_weights[:] = drad.Float16(opt['encoder_weights'])
+#     shading_frame_weights[:] = drad.Float16(opt['shading_frame_weights'])
+#     importance_weights[:] = drad.Float16(opt['importance_weights'])
     
     
-    bsdf : mi.BSDF = mesh.bsdf()
+#     bsdf : mi.BSDF = mesh.bsdf()
     
-    uv_coords, metalness, roughness, albedo, normal, si = sampling.generate_batched_uv_samples_for_importance_sampling(
-    mesh, 1, _metal_tex, _rough_tex, _base_tex, _normal_tex, generator)
+#     uv_coords, metalness, roughness, albedo, normal, si = sampling.generate_batched_uv_samples_for_importance_sampling(
+#     mesh, 1, _metal_tex, _rough_tex, _base_tex, _normal_tex, generator)
     
     
-    wi_local = sampling.random_wi_sample(generator, dr.width(uv_coords))
-    si.wi = wi_local
+#     wi_local = sampling.random_wi_sample(generator, dr.width(uv_coords))
+#     si.wi = wi_local
 
-    ctx = mi.BSDFContext()
-    ctx.type_mask = mi.BSDFFlags.All
+#     ctx = mi.BSDFContext()
+#     ctx.type_mask = mi.BSDFFlags.All
     
-    s1 = generator.random(dr.auto.ad.Float, dr.width(uv_coords))
-    s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(uv_coords)), generator.random(dr.auto.ad.Float, dr.width(uv_coords)))
+#     s1 = generator.random(dr.auto.ad.Float, dr.width(uv_coords))
+#     s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(uv_coords)), generator.random(dr.auto.ad.Float, dr.width(uv_coords)))
     
-    bs, spectrum = bsdf.sample(ctx, si, s1, s2)
-    
-
-    is_gloss = dr.select(bs.sampled_type == 3, True, False)
-    # print("bs.pdf", bs.pdf)
-    pdf = bs.pdf
-    wo_local = bs.wo
-
-    
-    
-    metalness = drad.TensorXf16(metalness.x)
-    roughness = drad.TensorXf16(roughness.x)
-    albedo = drad.TensorXf16(albedo.array)
-
-    encoded_texel = encoder_network(dr.nn.CoopVec(metalness, roughness, *albedo, *normal))
-    
-    unpacked_texel = drad.TensorXf16(encoded_texel)
-    
-    importance_input = dr.nn.CoopVec(*unpacked_texel, wi_local)
-    
-    params = importance_net(importance_input)
-    decoded = drad.TensorXf(params)
-
-    alpha = mi.Vector3f( dr.exp(decoded[:3]-3.0))
-    slope_spec = mi.Vector2f(dr.sinh(decoded[3:5]))
-    slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
-    weight_spec = drad.Float(sigmoid(decoded[7]))
+#     bs, spectrum = bsdf.sample(ctx, si, s1, s2)
     
 
-    pdf_spec_eval = sampling.pdf_specular(si.wi, bs.wo, alpha, slope_spec)
-    pdf_diff_eval = sampling.pdf_diffuse(slope_diff, bs.wo)
-    
-    # Mix them using the predicted weight
-    pdf_pred_at_gt = weight_spec * pdf_spec_eval + (1.0 - weight_spec) * pdf_diff_eval
-    dr.eval(pdf_pred_at_gt)
-    # wo_importance = dr.select(
-    #     is_gloss, 
-    #     sampling.sample_specular(si.wi, alpha, slope_spec, s2), 
-    #     sampling.sample_diffuse(slope_diff, s2))
-    # pdf_pred = dr.select(is_gloss, pdf_spec, pdf_diff)
+#     is_gloss = dr.select(bs.sampled_type == 3, True, False)
+#     # print("bs.pdf", bs.pdf)
+#     pdf = bs.pdf
+#     wo_local = bs.wo
 
     
-    frame_vectors = shading_frame_network(encoded_texel)
     
-    unpacked_frame_vectors = drad.TensorXf(frame_vectors) 
+#     metalness = drad.TensorXf16(metalness.x)
+#     roughness = drad.TensorXf16(roughness.x)
+#     albedo = drad.TensorXf16(albedo.array)
+
+#     encoded_texel = encoder_network(dr.nn.CoopVec(metalness, roughness, *albedo, *normal))
     
-    sh1_n = drad.Array3f(unpacked_frame_vectors[:3])
-    sh1_t = drad.Array3f(unpacked_frame_vectors[3:6])
-    sh2_n = drad.Array3f(unpacked_frame_vectors[6:9])
-    sh2_t = drad.Array3f(unpacked_frame_vectors[9:12])
+#     unpacked_texel = drad.TensorXf16(encoded_texel)
     
+#     importance_input = dr.nn.CoopVec(*unpacked_texel, wi_local)
     
-    sh1_b = dr.cross(sh1_n, sh1_t)
-    sh2_b = dr.cross(sh2_n, sh2_t)
-    unpacked_shading_frame1 = drad.Matrix3f(sh1_n, sh1_t, sh1_b)
-    unpacked_shading_frame2 = drad.Matrix3f(sh2_n, sh2_t, sh2_b)
-    
-    
-    dr.eval(unpacked_shading_frame1, unpacked_shading_frame2)
+#     params = importance_net(importance_input)
+#     decoded = drad.TensorXf(params)
+
+#     alpha = mi.Vector3f( dr.exp(decoded[:3]-3.0))
+#     slope_spec = mi.Vector2f(dr.sinh(decoded[3:5]))
+#     slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
+#     weight_spec = drad.Float(sigmoid(decoded[7]))
     
 
-    wi_transformed = dr.matmul(unpacked_shading_frame1,drad.Array3f(wi_local))
-    wo_transformed = dr.matmul(unpacked_shading_frame2,drad.Array3f(wo_local))
+#     pdf_spec_eval = sampling.pdf_specular(si.wi, bs.wo, alpha, slope_spec)
+#     pdf_diff_eval = sampling.pdf_diffuse(slope_diff, bs.wo)
     
-    dr.eval(unpacked_texel)
-    input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_transformed), *drad.TensorXf16(wo_transformed), *unpacked_texel)
-    
-    
-    
-    # print(spectrum)
-    target = drad.Array3f(spectrum) 
-    pred =  net(input_tensor)
-    
-    unpacked_pred = drad.TensorXf(pred)
+#     # Mix them using the predicted weight
+#     pdf_pred_at_gt = weight_spec * pdf_spec_eval + (1.0 - weight_spec) * pdf_diff_eval
+#     dr.eval(pdf_pred_at_gt)
+#     # wo_importance = dr.select(
+#     #     is_gloss, 
+#     #     sampling.sample_specular(si.wi, alpha, slope_spec, s2), 
+#     #     sampling.sample_diffuse(slope_diff, s2))
+#     # pdf_pred = dr.select(is_gloss, pdf_spec, pdf_diff)
 
-    unpacked_color = drad.Array3f(unpacked_pred[:3])
+    
+#     frame_vectors = shading_frame_network(encoded_texel)
+    
+#     unpacked_frame_vectors = drad.TensorXf(frame_vectors) 
+    
+#     sh1_n = drad.Array3f(unpacked_frame_vectors[:3])
+#     sh1_t = drad.Array3f(unpacked_frame_vectors[3:6])
+#     sh2_n = drad.Array3f(unpacked_frame_vectors[6:9])
+#     sh2_t = drad.Array3f(unpacked_frame_vectors[9:12])
+    
+    
+#     sh1_b = dr.cross(sh1_n, sh1_t)
+#     sh2_b = dr.cross(sh2_n, sh2_t)
+#     unpacked_shading_frame1 = drad.Matrix3f(sh1_n, sh1_t, sh1_b)
+#     unpacked_shading_frame2 = drad.Matrix3f(sh2_n, sh2_t, sh2_b)
+    
+    
+#     dr.eval(unpacked_shading_frame1, unpacked_shading_frame2)
+    
+
+#     wi_transformed = dr.matmul(unpacked_shading_frame1,drad.Array3f(wi_local))
+#     wo_transformed = dr.matmul(unpacked_shading_frame2,drad.Array3f(wo_local))
+    
+#     dr.eval(unpacked_texel)
+#     input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_transformed), *drad.TensorXf16(wo_transformed), *unpacked_texel)
     
     
     
-    # pdf_loss = dr.mean(dr.square(pdf_pred - pdf))
-    # if epoch > 20000:
-    pdf_loss = kl_divergence(pdf, pdf_pred_at_gt)
-    # else:
-    #     pdf_loss = drad.Float(0.0)
+#     # print(spectrum)
+#     target = drad.Array3f(spectrum) 
+#     pred =  net(input_tensor)
+    
+#     unpacked_pred = drad.TensorXf(pred)
+
+#     unpacked_color = drad.Array3f(unpacked_pred[:3])
+    
+    
+    
+#     # pdf_loss = dr.mean(dr.square(pdf_pred - pdf))
+#     # if epoch > 20000:
+#     pdf_loss = kl_divergence(pdf, pdf_pred_at_gt)
+#     # else:
+#     #     pdf_loss = drad.Float(0.0)
 
 
-    bsdf_loss = log_l1(unpacked_color, target)
-    loss = dr.mean(bsdf_loss) 
+#     bsdf_loss = log_l1(unpacked_color, target)
+#     loss = dr.mean(bsdf_loss) 
 
-    # wo_loss = l2(wo_local, wo_importance)
+#     # wo_loss = l2(wo_local, wo_importance)
     
-    # pdf_loss = dr.select(bs.pdf > 0.0, pdf_loss, drad.Float(0.0))
-    # wo_loss = dr.select(bs.pdf > 0.0, wo_loss, drad.Float(0.0))
-    # print("bsdf_loss:", bsdf_loss, "pdf_loss:", pdf_loss, "wo_loss:", wo_loss)
-    # wo_loss = 0.0
-    # loss = dr.mean(bsdf_loss)
-    dr.backward(scaler.scale(loss + pdf_loss))
-    scaler.step(opt)
-    avg_loss = loss
-    pdf_loss = dr.mean(pdf_loss)
-    # i += 1
-    return avg_loss, pdf_loss
+#     # pdf_loss = dr.select(bs.pdf > 0.0, pdf_loss, drad.Float(0.0))
+#     # wo_loss = dr.select(bs.pdf > 0.0, wo_loss, drad.Float(0.0))
+#     # print("bsdf_loss:", bsdf_loss, "pdf_loss:", pdf_loss, "wo_loss:", wo_loss)
+#     # wo_loss = 0.0
+#     # loss = dr.mean(bsdf_loss)
+#     dr.backward(scaler.scale(loss + pdf_loss))
+#     scaler.step(opt)
+#     avg_loss = loss
+#     pdf_loss = dr.mean(pdf_loss)
+#     # i += 1
+#     return avg_loss, pdf_loss
 
 import argparse
 import yaml
@@ -523,6 +503,12 @@ def parse_config_file(config_path: str, args) -> dict:
         args.decoder_epochs = yaml_data['decoder_epochs']
     if 'importance_epochs' in yaml_data:
         args.importance_epochs = yaml_data['importance_epochs']
+    if 'texture_epochs' in yaml_data:
+        args.texture_epochs = yaml_data['texture_epochs']
+    if 'texture_sample_size' in yaml_data:
+        args.texture_sample_size = yaml_data['texture_sample_size']
+    
+    
     return yaml_data
 _LAYER_MAP = {
     'Linear': lambda args: nn.Linear(*args),
@@ -545,12 +531,14 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Train a neural network to approximate a BSDF using Mitsuba and Dr.Jit.")
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs.')
     parser.add_argument('--output_folder', type=str, help='Folder for outputt')
-    parser.add_argument('--training_config', type=str, help='Training configuration file path.')
+    parser.add_argument('--config', type=str, help='Training configuration file path.')
     parser.add_argument('--learning_rate', type=float, default=1e-4, help='Learning rate for the optimizer.')
     parser.add_argument('--print_every', type=int, default=1000, help='Print training progress every N epochs.')
     parser.add_argument('--render_every', type=int, default=10000, help='Render test image every N epochs.')
     parser.add_argument('--decoder_epochs', type=int, default=20000, help='Number of epochs to train the decoder only.')
     parser.add_argument('--importance_epochs', type=int, default=50000, help='Number of epochs to train the importance network.')
+    parser.add_argument('--texture_epochs', type=int, default=20000, help='Number of epochs to train the texture only.')
+    parser.add_argument('--texture_sample_size', type=int, default=10000, help='Number of samples to use when training the texture.')
     args = parser.parse_args()
     
     return args
@@ -592,7 +580,7 @@ def main():
     args = parse_arguments()
     
     
-    config = parse_config_file(args.training_config, args)
+    config = parse_config_file(args.config, args)
     net_cfg = config['networks']
     
 
@@ -622,7 +610,7 @@ def main():
     # train_set = np.array([training_set.get for _ in range(1000)])
 
     encoder_input_size = 1 + 1 + 3 + 3  # metalness, roughness, albedo(3), normal(3)
-    encoder_output_size = 12
+    encoder_output_size = 8
 
 
     
@@ -800,13 +788,16 @@ def main():
     tex = latent_texture
     dr.enable_grad(tex)
     
-
-    texture_epochs = 2000
+    texture_sample_size = args.texture_sample_size
+    texture_epochs = args.texture_epochs
     pbar = tqdm.tqdm( desc="Texture Training Progress", unit="sample", total=texture_epochs)
     loss = drad.Float32(0.0)
     
     dr.enable_grad(tex)
-    opt = Adam(
+    
+    scaler1 = GradScaler()
+    scaler2 = GradScaler()
+    opt1 = Adam(
         lr=args.learning_rate,
         params={
             'weights': drad.Float32(weights),
@@ -814,68 +805,84 @@ def main():
             'texture': drad.TensorXf16(tex)
             }
         )
-    
-    
-    generator = dr.rng(seed=drad.UInt(42))
-    # dr.disable_grad(weights)
-    avg_texture_loss = drad.Float32(0.0)
-    for epoch in range(texture_epochs):
-        i = dr.opaque(drad.Int,epoch)
-        texture_loss = train_decoder_and_texture(
-            net,
-            shading_frame_network,
-            opt,
-            weights,
-            shading_frame_weights,
-            scaler,
-            mesh,
-            tex,
-            generator) 
-        avg_texture_loss += texture_loss
-        if i != 0 and i % print_every == 0:
-            pbar.update(print_every)
-            pbar.set_postfix({'texture loss': avg_texture_loss / print_every})
-            # loss_per_epoch[i // print_every - 1] = avg_loss / print_every
-            avg_texture_loss = drad.Float32(0.0)
-
-
-
-    importance_epochs = args.importance_epochs
-    pbar = tqdm.tqdm( desc="Epoch Training Progress", unit="sample", total=importance_epochs)
-    loss = drad.Float32(0.0)
-    
-    
-    opt = Adam(
+    opt2 = Adam(
         lr=args.learning_rate,
         params={
-            # 'encoder_weights': drad.Float32(encoder_weights),
             'importance_weights': drad.Float32(importance_weights)
             }
         )
     
-    dr.disable_grad(weights)
-    avg_pdf_loss = drad.Float32(0.0)
-    for epoch in range(importance_epochs):
+    generator = dr.rng(seed=drad.UInt(42))
+    # dr.disable_grad(weights)
+    avg_texture_loss = drad.Float32(0.0)
+    avg_importance_loss = drad.Float32(0.0)
+    for epoch in range(texture_epochs):
         i = dr.opaque(drad.Int,epoch)
-        pdf_loss = train_sampler(
-            importance_net, 
-            opt, 
+        lt = drad.Texture2f16(opt1["texture"])
+        texture_loss = train_decoder_and_texture(
+            net,
+            shading_frame_network,
+            opt1,
+            weights,
+            shading_frame_weights,
+            scaler,
+            mesh,
+            lt,
+            generator)
+        dr.backward(scaler1.scale(texture_loss))
+        scaler1.step(opt1)
+        lt = drad.Texture2f16(opt1["texture"])
+        importance_loss = train_sampler(
+            importance_net,
+            opt2, 
             importance_weights, 
             scaler, 
             mesh, 
-            _metal_tex, 
-            _rough_tex, 
-            _base_tex, 
-            _normal_tex, 
-            tex,
+            lt,
             generator,
-            epoch) 
-        avg_pdf_loss += pdf_loss
+            epoch)
+        dr.backward(scaler2.scale(importance_loss))
+        scaler2.step(opt2)
+
+        
+        
+        avg_importance_loss += 0
+        avg_texture_loss += texture_loss
         if i != 0 and i % print_every == 0:
             pbar.update(print_every)
-            pbar.set_postfix({'Importance Sampling Loss': avg_pdf_loss / print_every})
-            # loss_per_epoch[i // print_every - 1] = avg_loss / print_every
-            avg_pdf_loss = drad.Float32(0.0)
+            pbar.set_postfix({'texture loss': avg_texture_loss / print_every, 'importance loss': avg_importance_loss / print_every})
+
+            avg_texture_loss = drad.Float32(0.0)
+            avg_importance_loss = drad.Float32(0.0)
+
+
+    # importance_epochs = args.importance_epochs
+    # pbar = tqdm.tqdm( desc="Importance Sampling Progress", unit="sample", total=importance_epochs)
+    # loss = drad.Float32(0.0)
+    # lt = drad.Texture2f16(opt["texture"])
+
+    
+    
+    
+    # dr.disable_grad(weights)
+    # avg_pdf_loss = drad.Float32(0.0)
+    # for epoch in range(importance_epochs):
+    #     i = dr.opaque(drad.Int,epoch)
+    #     pdf_loss = train_sampler(
+    #         importance_net,
+    #         opt, 
+    #         importance_weights, 
+    #         scaler, 
+    #         mesh, 
+    #         lt,
+    #         generator,
+    #         epoch) 
+    #     avg_pdf_loss += pdf_loss
+    #     if i != 0 and i % print_every == 0:
+    #         pbar.update(print_every)
+    #         pbar.set_postfix({'Importance Sampling Loss': avg_pdf_loss / print_every})
+    #         # loss_per_epoch[i // print_every - 1] = avg_loss / print_every
+    #         avg_pdf_loss = drad.Float32(0.0)
         # if i != 0 and i % render_every == 0:
         #     neural_bsdf.add_model(net, encoder_network, shading_frame_network, importance_net)
         #     scene_dict = {

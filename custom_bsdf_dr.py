@@ -6,6 +6,8 @@ import drjit as dr
 # dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
 import drjit.auto.ad as drad
 import json
+
+from sympy import denom
 import sampling
 # mi.set_variant("scalar_rgb")
 
@@ -207,19 +209,23 @@ class NeuralBSDF(mi.BSDF):
         
         if self.encoder_model is not None and self.importance_sampling_model is not None:
             
-            base_color = self.base_color.eval(si)
-            normal_map = self.normal_map.eval(si)
-            roughness = self.roughness.eval_1(si)
-            metallic  = self.metallic.eval_1(si)
-            
-            dr.eval(base_color, roughness, metallic, normal_map)
-            roughness_val = dr.reshape(drad.TensorXf16(roughness), (1, -1))
-            metallic_val  = dr.reshape(drad.TensorXf16(metallic), (1, -1))
-            wi_local = dr.reshape(drad.TensorXf16(si.wi),(3,-1))
-            normal_val = drad.TensorXf16(normal_map)
-            encoded_texel = self.encoder_model(dr.nn.CoopVec(metallic_val, roughness_val, *drad.TensorXf16(base_color), *normal_val))
-            
-            importance_input = dr.nn.CoopVec(*encoded_texel, *wi_local)
+            if self.latent_texture is None:
+                base_color = self.base_color.eval(si)
+                normal_map = self.normal_map.eval(si)
+                roughness = self.roughness.eval_1(si)
+                metallic  = self.metallic.eval_1(si)
+                
+                dr.eval(base_color, roughness, metallic, normal_map)
+                roughness_val = dr.reshape(drad.TensorXf16(roughness), (1, -1))
+                metallic_val  = dr.reshape(drad.TensorXf16(metallic), (1, -1))
+                wi_local = dr.reshape(drad.TensorXf16(si.wi),(3,-1))
+                normal_val = drad.TensorXf16(normal_map)
+                encoded_texel = self.encoder_model(dr.nn.CoopVec(metallic_val, roughness_val, *drad.TensorXf16(base_color), *normal_val))
+            else:
+                latent_vals = self.latent_texture.eval(si.uv)
+                wi_local = dr.reshape(drad.TensorXf16(si.wi),(3,-1))
+                encoded_texel = drad.TensorXf16(latent_vals)
+            importance_input = dr.nn.CoopVec(*wi_local, *encoded_texel)
             params = self.importance_sampling_model(importance_input)
             decoded = drad.TensorXf(params)
 
@@ -257,10 +263,11 @@ class NeuralBSDF(mi.BSDF):
         bs.sampled_type = self._flags & mi.BSDFFlags.Diffuse
         bs.sampled_component = 0
         bs.eta = 1.0
+        denom = dr.maximum(pdf, 1e-6)
 
         weight = mi.Color3f(0.0)
         valid = active & (cos_theta > 0) & (pdf > 0)
-        weight = mi.Color3f(dr.select(valid, f_val, mi.Color3f(0.0)))
+        weight = (f_val / denom) & valid
         return (bs, weight)
 
     def traverse(self, callback):
