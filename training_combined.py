@@ -800,7 +800,7 @@ def main():
             # loss_per_epoch[epoch // print_every - 1] = avg_loss / print_every
             avg_loss = drad.Float32(0.0)
     
-    def run_encoder(net,uv, metal_tex, rough_tex, base_tex, normal_tex):
+    def run_encoder(net, uv, metal_tex, rough_tex, base_tex, normal_tex):
         si = mi.SurfaceInteraction3f()
         si.uv = uv
         metalness = metal_tex.eval_1(si)
@@ -1054,7 +1054,7 @@ def main():
 
     
     
-    image = render_image(s, expected_samples=128)
+    image = render_image(s, expected_samples=256)
     
     print("Neural BSDF loaded.")
     print(neural_bsdf)
