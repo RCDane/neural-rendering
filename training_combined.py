@@ -27,7 +27,7 @@ TEX = "data/textures"
 _scene_dict = {
         'type': 'obj',
         'filename': OBJ,
-        'face_normals': True,
+        'face_normals': False,
         'bsdf': {
             'type': 'normalmap',
             'normalmap': {'type': 'bitmap', 'filename': f'{TEX}/lubricant_spray_nor_gl_1k.exr', 'raw': True},
@@ -81,6 +81,8 @@ import tqdm
 import random
 
 def run_shading_frame_network(network, input, wi, wo):
+    if network is None:
+        return wi, wo
     frame_vectors = network(input)
     
     unpacked_frame_vectors = drad.TensorXf(frame_vectors) 
@@ -120,10 +122,12 @@ def train_decoder(
     generator,
 ):
 
-    
-    weights[:] = drad.Float16(opt['weights'])
-    encoder_weights[:] = drad.Float16(opt['encoder_weights'])
-    shading_frame_weights[:] = drad.Float16(opt['shading_frame_weights'])
+    if net is not None:
+        weights[:] = drad.Float16(opt['weights'])
+    if encoder_network is not None:
+        encoder_weights[:] = drad.Float16(opt['encoder_weights'])
+    if shading_frame_network is not None:
+        shading_frame_weights[:] = drad.Float16(opt['shading_frame_weights'])
     
     
     bsdf : mi.BSDF = mesh.bsdf()
@@ -169,7 +173,7 @@ def train_decoder(
 
     pdf = dr.maximum(pdf, 1e-6)
     # print(spectrum)
-    target = drad.Array3f(spectrum)
+    target = drad.Array3f(spectrum * pdf)
     pred =  net(input_tensor)
     
     unpacked_pred = drad.TensorXf(pred)
@@ -205,21 +209,32 @@ def train_decoder_and_texture(
     weights[:] = drad.Float16(opt['weights'])
     shading_frame_weights[:] = drad.Float16(opt['shading_frame_weights'])
     
-    
+    rng = generator
+
     bsdf : mi.BSDF = mesh.bsdf()
-    n = latent_texture.shape[0]
-    uvs = generator.random(drad.Array2f, (2, n))
+    # n = latent_texture.shape[0]
+    # uvs = generator.random(drad.Array2f, (2, n))
 
-    wi_local = mi.warp.square_to_cosine_hemisphere(uvs)
-    si = mesh.eval_parameterization(mi.Point2f(uvs), mi.RayFlags.UV)
+    # wi_local = mi.warp.square_to_cosine_hemisphere(uvs)
 
-    si.wi = wi_local
+    # si.wi = wi_local
     ctx = mi.BSDFContext()
-    ctx.type_mask = mi.BSDFFlags.All
+    # ctx.type_mask = mi.BSDFFlags.All
+    faces = mesh.faces_buffer()
+
+    face_count = dr.width(faces) // 3
+    s1 = generator.random(dr.auto.ad.Float, dr.width(face_count))
+    s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(face_count)), generator.random(dr.auto.ad.Float, dr.width(face_count)))
+
+
+    indices = dr.arange(dr.auto.ad.UInt, face_count)
+
+
+    samples_multiple = sampling.sample_face_uvs_multiple(indices, mesh, rng, 1)    
+    si = mesh.eval_parameterization(mi.Point2f(samples_multiple), mi.RayFlags.All)
+    # print("si:", si)
     
-    s1 = generator.random(dr.auto.ad.Float, dr.width(wi_local))
-    s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(wi_local)), generator.random(dr.auto.ad.Float, dr.width(wi_local)))
-    
+    # sample = sample_face_uvs(indices, mesh, rng)
 
     
     bs, spectrum = bsdf.sample(ctx, si, s1, s2)
@@ -234,17 +249,19 @@ def train_decoder_and_texture(
     frame_input = nn.CoopVec(drad.TensorXf16(latent_vals))
     
     
-    wi_transformed, wo_transformed = run_shading_frame_network(shading_frame_network, frame_input, wi_local, wo_local)
+    wi_transformed, wo_transformed = run_shading_frame_network(shading_frame_network, frame_input, si.wi, wo_local)
     
     
-    print("latent_vector:", latent_vals)
+    # print("latent_vector:", latent_vals)
     
     input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_transformed), *drad.TensorXf16(wo_transformed), *drad.TensorXf16(latent_vals))
     
     pdf = bs.pdf
+    # print("pdf:", pdf)
+    # print("bs spectrum:", spectrum)
     cos_theta_o = dr.maximum(mi.Frame3f.cos_theta(wo_local), 1e-6)
     
-    # print(spectrum)
+    
     target = drad.Array3f(spectrum )
     
 
@@ -253,13 +270,13 @@ def train_decoder_and_texture(
     unpacked_pred = drad.TensorXf(pred)
 
     unpacked_color = drad.Array3f(unpacked_pred[:3])
-    print("unpacked_color:", unpacked_color)
+    # print("unpacked_color:", unpacked_color)
 
 
     bsdf_loss = log_l1(unpacked_color, target)
-    print("bsdf_loss:", dr.mean(bsdf_loss))
+    # print("bsdf_loss:", dr.mean(bsdf_loss))
     loss = dr.mean(bsdf_loss) 
-    print("total loss:", loss)
+    # print("total loss:", loss)
 
     # i += 1
     return loss
@@ -287,7 +304,7 @@ def train_sampler(
     uvs = generator.random(drad.Array2f, (2, n))
 
     wi_local = mi.warp.square_to_cosine_hemisphere(uvs)
-    si = mesh.eval_parameterization(mi.Point2f(uvs), mi.RayFlags.UV)
+    si = mesh.eval_parameterization(mi.Point2f(uvs), mi.RayFlags.All)
 
     si.wi = wi_local
     si.uv = uvs
@@ -507,8 +524,18 @@ def parse_config_file(config_path: str, args) -> dict:
         args.texture_epochs = yaml_data['texture_epochs']
     if 'texture_sample_size' in yaml_data:
         args.texture_sample_size = yaml_data['texture_sample_size']
-    
-    
+    if 'output_folder' in yaml_data:
+        args.output_folder = yaml_data['output_folder']
+    if 'use_encoder' in yaml_data:
+        args.use_encoder = yaml_data['use_encoder']
+    if 'use_shading_frame' in yaml_data:
+        args.use_shading_frame = yaml_data['use_shading_frame']
+    if 'use_decoder' in yaml_data:
+        args.use_decoder = yaml_data['use_decoder']
+    if 'use_importance_sampling' in yaml_data:
+        args.use_importance_sampling = yaml_data['use_importance_sampling']
+    if 'use_texture' in yaml_data:
+        args.use_texture = yaml_data['use_texture']
     return yaml_data
 _LAYER_MAP = {
     'Linear': lambda args: nn.Linear(*args),
@@ -539,6 +566,11 @@ def parse_arguments():
     parser.add_argument('--importance_epochs', type=int, default=50000, help='Number of epochs to train the importance network.')
     parser.add_argument('--texture_epochs', type=int, default=20000, help='Number of epochs to train the texture only.')
     parser.add_argument('--texture_sample_size', type=int, default=10000, help='Number of samples to use when training the texture.')
+    parser.add_argument('--use_encoder', action='store_true', help='Whether to use the encoder network.')
+    parser.add_argument('--use_shading_frame', action='store_true', help='Whether to use the shading frame network.')
+    parser.add_argument('--use_decoder', action='store_true', help='Whether to use the decoder network.')
+    parser.add_argument('--use_importance_sampling', action='store_true', help='Whether to use the importance sampling network.')
+    parser.add_argument('--use_texture', action='store_true', help='Whether to use the latent texture.')
     args = parser.parse_args()
     
     return args
@@ -680,13 +712,18 @@ def main():
     dr.enable_grad(importance_weights)
     opt = Adam(
         lr=args.learning_rate, 
-        params={
-            'weights': drad.Float32(weights), 
-            'encoder_weights': drad.Float32(encoder_weights),
-            'shading_frame_weights': drad.Float32(shading_frame_weights),
-            'importance_weights': drad.Float32(importance_weights)
-            }
+        # params={
+        #     'weights': drad.Float32(weights), 
+        #     'encoder_weights': drad.Float32(encoder_weights),
+        #     'shading_frame_weights': drad.Float32(shading_frame_weights),
+        #     'importance_weights': drad.Float32(importance_weights)
+        #     }
         )
+    opt['weights'] = drad.Float32(weights)
+    opt['encoder_weights'] = drad.Float32(encoder_weights)
+    if args.use_shading_frame:
+        opt['shading_frame_weights'] = drad.Float32(shading_frame_weights)
+
     
     # def cosine_learning_rate_scheduler(opt, min_lr, max_lr, epoch, max_epochs, warmup_epochs=1000):
     #     if epoch < warmup_epochs:
@@ -734,6 +771,11 @@ def main():
     
     loss_per_epoch = np.zeros(epochs//print_every)
     avg_loss = drad.Float32(0.0)
+    
+    if not args.use_shading_frame:
+        shading_frame_network = None
+        shading_frame_weights = None
+    
     
     for epoch in range(epochs):
         loss = train_decoder(
@@ -786,74 +828,71 @@ def main():
     # tex = mi.Bitmap(mi.Bitmap.PixelFormat.MultiChannel, mi.Struct.Type.Float16, (res, res))
 
     tex = latent_texture
-    dr.enable_grad(tex)
+    # dr.enable_grad(tex)
     
-    texture_sample_size = args.texture_sample_size
-    texture_epochs = args.texture_epochs
-    pbar = tqdm.tqdm( desc="Texture Training Progress", unit="sample", total=texture_epochs)
-    loss = drad.Float32(0.0)
+    # texture_sample_size = args.texture_sample_size
+    # texture_epochs = args.texture_epochs
+    # pbar = tqdm.tqdm( desc="Texture Training Progress", unit="sample", total=texture_epochs)
+    # loss = drad.Float32(0.0)
     
-    dr.enable_grad(tex)
+    # dr.enable_grad(tex)
     
-    scaler1 = GradScaler()
-    scaler2 = GradScaler()
-    opt1 = Adam(
-        lr=args.learning_rate,
-        params={
-            'weights': drad.Float32(weights),
-            'shading_frame_weights': drad.Float32(shading_frame_weights),
-            'texture': drad.TensorXf16(tex)
-            }
-        )
-    opt2 = Adam(
-        lr=args.learning_rate,
-        params={
-            'importance_weights': drad.Float32(importance_weights)
-            }
-        )
+    # scaler1 = GradScaler()
+    # scaler2 = GradScaler()
+    # opt1 = Adam(
+    #     lr=args.learning_rate,
+    #     params={
+    #         'weights': drad.Float32(weights),
+    #         'shading_frame_weights': drad.Float32(shading_frame_weights),
+    #         'texture': drad.TensorXf16(tex)
+    #         }
+    #     )
+    # opt2 = Adam(
+    #     lr=args.learning_rate,
+    #     params={
+    #         'importance_weights': drad.Float32(importance_weights)
+    #         }
+    #     )
     
-    generator = dr.rng(seed=drad.UInt(42))
-    # dr.disable_grad(weights)
-    avg_texture_loss = drad.Float32(0.0)
-    avg_importance_loss = drad.Float32(0.0)
-    for epoch in range(texture_epochs):
-        i = dr.opaque(drad.Int,epoch)
-        lt = drad.Texture2f16(opt1["texture"])
-        texture_loss = train_decoder_and_texture(
-            net,
-            shading_frame_network,
-            opt1,
-            weights,
-            shading_frame_weights,
-            scaler,
-            mesh,
-            lt,
-            generator)
-        dr.backward(scaler1.scale(texture_loss))
-        scaler1.step(opt1)
-        lt = drad.Texture2f16(opt1["texture"])
-        importance_loss = train_sampler(
-            importance_net,
-            opt2, 
-            importance_weights, 
-            scaler, 
-            mesh, 
-            lt,
-            generator,
-            epoch)
-        dr.backward(scaler2.scale(importance_loss))
-        scaler2.step(opt2)
+    # generator = dr.rng(seed=drad.UInt(42))
+    # # dr.disable_grad(weights)
+    # avg_texture_loss = drad.Float32(0.0)
+    # avg_importance_loss = drad.Float32(0.0)
+    # for epoch in range(texture_epochs):
+    #     i = dr.opaque(drad.Int,epoch)
+    #     lt = drad.Texture2f16(opt1["texture"])
+    #     texture_loss = train_decoder_and_texture(
+    #         net,
+    #         shading_frame_network,
+    #         opt1,
+    #         weights,
+    #         shading_frame_weights,
+    #         scaler,
+    #         mesh,
+    #         lt,
+    #         generator)
+    #     dr.backward(scaler1.scale(texture_loss))
+    #     scaler1.step(opt1)
+    #     # lt = drad.Texture2f16(opt1["texture"])
+    #     # importance_loss = train_sampler(
+    #     #     importance_net,
+    #     #     opt2, 
+    #     #     importance_weights, 
+    #     #     scaler, 
+    #     #     mesh, 
+    #     #     lt,
+    #     #     generator,
+    #     #     epoch)
+    #     # dr.backward(scaler2.scale(importance_loss))
+    #     # scaler2.step(opt2)'
+    #     avg_importance_loss += 0
+    #     avg_texture_loss += texture_loss
+    #     if i != 0 and i % print_every == 0:
+    #         pbar.update(print_every)
+    #         pbar.set_postfix({'texture loss': avg_texture_loss / print_every, 'importance loss': avg_importance_loss / print_every})
 
-        
-        
-        avg_importance_loss += 0
-        avg_texture_loss += texture_loss
-        if i != 0 and i % print_every == 0:
-            pbar.update(print_every)
-            pbar.set_postfix({'texture loss': avg_texture_loss / print_every, 'importance loss': avg_importance_loss / print_every})
-
-            avg_texture_loss = drad.Float32(0.0)
-            avg_importance_loss = drad.Float32(0.0)
+    #         avg_texture_loss = drad.Float32(0.0)
+    #         avg_importance_loss = drad.Float32(0.0)
 
 
     # importance_epochs = args.importance_epochs
@@ -967,10 +1006,18 @@ def main():
     dr.disable_grad(weights)
     dr.disable_grad(encoder_weights)
     dr.disable_grad(shading_frame_weights)
+    
+    dec_net = net if args.use_decoder else None
+    enc_net = encoder_network if args.use_encoder else None
+    shading_net = shading_frame_network if args.use_shading_frame else None
+    importance_net = importance_net if args.use_importance_sampling else None
+    
     neural_bsdf.add_model(net, encoder_network, shading_frame_network, importance_net)
     
-    latent_texture = drad.Texture2f16(tex)
-    neural_bsdf.add_texture(latent_texture)
+    texture = drad.Texture2f16(tex) if args.use_texture else None
+    
+    print("\nusing: decoder:", args.use_decoder, "encoder:", args.use_encoder, "shading frame:", args.use_shading_frame, "importance sampling:", args.use_importance_sampling, "texture:", args.use_texture, "\n")
+    neural_bsdf.add_texture(texture)
     scene_dict = {
 		'type': 'scene',
         'integrator': {
@@ -997,7 +1044,7 @@ def main():
       {
 			'type': 'obj',
             'filename': OBJ,
-            'face_normals': True,
+            'face_normals': False,
             'bsdf': neural_bsdf
 		}
 	}

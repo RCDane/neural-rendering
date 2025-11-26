@@ -30,7 +30,7 @@ scene = mi.load_dict({
     'mesh': {
         'type': 'obj',
         'filename': obj_file,
-        'face_normals': True,          # good default for OBJ
+        'face_normals': False,          # good default for OBJ
         # Wrap the Principled BSDF with a normalmap BSDF
         'bsdf': {
             'type': 'normalmap',

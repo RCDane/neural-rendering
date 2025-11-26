@@ -49,6 +49,11 @@ class NeuralBSDF(mi.BSDF):
         assert self.input_dim != 0, "[NeuralBSDF] 'input_dim' property must be specified."
         
         self.output_dim = props.get('output_dim', 3)
+        self.latent_texture = None
+        self.model = None
+        self.encoder_model = None
+        self.shading_frame_model = None
+        self.importance_sampling_model = None
         
         # self.model_path = props.get('model_path', '')
         # assert self.model_path != '', "[NeuralBSDF] 'model_path' property must be specified."
@@ -123,8 +128,8 @@ class NeuralBSDF(mi.BSDF):
     def eval(self, ctx: mi.BSDFContext,  si: mi.SurfaceInteraction3f,
              wo: mi.Vector3f, active=True) -> mi.Color3f:
         wi = si.wi
-        wi = si.to_local(wi)
-        wo = si.to_local(wo)
+        # wi = si.to_local(wi)
+        # wo = si.to_local(wo)
         cos_theta_i = mi.Frame3f.cos_theta(wi)
         cos_theta_o = mi.Frame3f.cos_theta(wo)
         valid = active & (cos_theta_i > 0) & (cos_theta_o > 0)
@@ -181,19 +186,13 @@ class NeuralBSDF(mi.BSDF):
             input = dr.nn.CoopVec(*input_concat)
             uses_latent = False
             
-        
-            
-        # input = dr.nn.CoopVec(wi_local, wo_local,
-        #                          metallic_val, roughness_val, base_color_val)
-        
+
         output = drad.TensorXf(self.model(input))
         
         
         
         f_rgb = mi.Color3f(output[:3])
         
-        # print("f_rgb:",f_rgb, "f_rgb shape:", f_rgb.shape)
-
         return dr.select(active, f_rgb, mi.Color3f(0.0))
         
 
@@ -202,7 +201,8 @@ class NeuralBSDF(mi.BSDF):
             wo: mi.Vector3f, active=True) -> mi.Float:
         cos_theta = mi.Frame3f.cos_theta(wo)
         inv_pi = 1.0 / np.pi
-        return mi.Float(dr.select(cos_theta > 0, 1.0, 0.0))
+        return mi.Float(dr.select(active & (cos_theta > 0), inv_pi, 0.0))
+        # return mi.Float(dr.select(cos_theta > 0, 1.0, 0.0))
     def sample(self, ctx: mi.BSDFContext, si: mi.SurfaceInteraction3f,
                sample1: mi.Float, sample2: mi.Point2f, active=True):
         # Cosine-weighted hemisphere using sample2
@@ -251,11 +251,11 @@ class NeuralBSDF(mi.BSDF):
             y = r * dr.sin(phi)
             z = dr.sqrt(dr.maximum(0.0, 1.0 - u1))
             wo = mi.Vector3f(x, y, z)
-            pdf = 1.0
+            pdf = self.pdf(ctx, si, wo, active)
+
 
         f_val = self.eval(ctx, si, wo, active) / pdf
         cos_theta = mi.Frame3f.cos_theta(wo)
-        # pdf_val = dr.select(cos_theta > 0, 1.0, 0.0)
 
         bs = mi.BSDFSample3f()
         bs.wo = wo
@@ -267,7 +267,7 @@ class NeuralBSDF(mi.BSDF):
 
         weight = mi.Color3f(0.0)
         valid = active & (cos_theta > 0) & (pdf > 0)
-        weight = (f_val / denom) & valid
+        weight = (f_val ) & valid
         return (bs, weight)
 
     def traverse(self, callback):
