@@ -18,12 +18,12 @@
 #BSUB -W 24:00 
 ### -- Specify the output and error file. %J is the job-id -- 
 ### -- -o and -e mean append, -oo and -eo mean overwrite -- 
-#BSUB -o Output_%J.out 
-#BSUB -e Output_%J.err 
+#BSUB -o output/Output_%J.out 
+#BSUB -e output/Output_%J.err 
 
 # here follow the commands you want to execute with input.in as the input file
 module load cuda/12.9.1
 nvidia-smi
 
 source ../.nr-env/bin/activate
-python3 training_combined.py --output_folder output/nov_20_11/run3 --training_config training_configs/default.yml > output.log
+python3 training_combined.py --output_folder output/nov_20_11/run3 --training_config training_configs/hpc_batch.yml > output/output.log
