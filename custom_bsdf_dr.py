@@ -199,13 +199,54 @@ class NeuralBSDF(mi.BSDF):
 
     def pdf(self, ctx: mi.BSDFContext, si: mi.SurfaceInteraction3f,
             wo: mi.Vector3f, active=True) -> mi.Float:
-        cos_theta = mi.Frame3f.cos_theta(wo)
-        inv_pi = 1.0 / np.pi
-        return mi.Float(dr.select(active & (cos_theta > 0), inv_pi, 0.0))
+        wi = si.wi
+        
+        cos_theta_i = mi.Frame3f.cos_theta(wi)
+        cos_theta_o = mi.Frame3f.cos_theta(wo)
+        valid = active & (cos_theta_i > 0.0) & (cos_theta_o > 0.0)
+
+        if self.encoder_model is None or self.importance_sampling_model is None:
+            inv_pi = 1.0 / np.pi
+            return mi.Float(dr.select(valid, inv_pi, 0.0))
+
+        if self.latent_texture is None:
+            base_color = self.base_color.eval(si)
+            normal_map = self.normal_map.eval(si)
+            roughness = self.roughness.eval_1(si)
+            metallic = self.metallic.eval_1(si)
+            dr.eval(base_color, roughness, metallic, normal_map)
+
+            roughness_val = dr.reshape(drad.TensorXf16(roughness), (1, -1))
+            metallic_val = dr.reshape(drad.TensorXf16(metallic), (1, -1))
+            base_color_val = drad.TensorXf16(base_color)
+            normal_val = drad.TensorXf16(normal_map)
+
+            encoded_texel = self.encoder_model(
+                dr.nn.CoopVec(metallic_val, roughness_val, *base_color_val, *normal_val)
+            )
+            texel_tensor = drad.TensorXf16(encoded_texel)
+        else:
+            texel_tensor = drad.TensorXf16(self.latent_texture.eval(si.uv))
+
+        wi_tensor = dr.reshape(drad.TensorXf16(wi), (3, -1))
+        importance_input = dr.nn.CoopVec(*wi_tensor, *texel_tensor)
+        params = self.importance_sampling_model(importance_input)
+        decoded = drad.TensorXf(params)
+
+        alpha = mi.Vector3f(dr.exp(decoded[:3] - 3.0))
+        slope_spec = mi.Vector2f(dr.sinh(decoded[3:5]))
+        slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
+        weight_spec = drad.Float(sigmoid(decoded[7]))
+
+        pdf_spec = sampling.pdf_specular(wi, wo, alpha, slope_spec)
+        pdf_diff = sampling.pdf_diffuse(slope_diff, wo)
+        pdf_pred = weight_spec * pdf_spec + (1.0 - weight_spec) * pdf_diff
+        dr.eval(pdf_pred)
+
+        return mi.Float(dr.select(valid, pdf_pred, 0.0))
         # return mi.Float(dr.select(cos_theta > 0, 1.0, 0.0))
     def sample(self, ctx: mi.BSDFContext, si: mi.SurfaceInteraction3f,
                sample1: mi.Float, sample2: mi.Point2f, active=True):
-        # Cosine-weighted hemisphere using sample2
         
         if self.encoder_model is not None and self.importance_sampling_model is not None:
             
@@ -234,28 +275,18 @@ class NeuralBSDF(mi.BSDF):
             slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
             weight_spec = drad.Float(sigmoid(decoded[7]))
 
-            wo_spec, wo_diff, pdf_spec, pdf_diff, pdf_pred = sampling.sample_analytic(
+            wo, pdf = sampling.sample_analytic(
                 drad.Array3f16(alpha), drad.Array2f16(slope_spec), drad.Array2f16(slope_diff), drad.Float16(weight_spec),
                 drad.Array3f16(wi_local), drad.Array2f16(sample2)
             )
             
-            is_specular = sample1 < weight_spec
-            wo = dr.select(is_specular, wo_spec, wo_diff)
-            pdf = dr.select(is_specular, pdf_spec, pdf_diff)
         else:     
-            u1 = sample2.x
-            u2 = sample2.y
-            r = dr.sqrt(u1)
-            phi = 2.0 * dr.pi * u2
-            x = r * dr.cos(phi)
-            y = r * dr.sin(phi)
-            z = dr.sqrt(dr.maximum(0.0, 1.0 - u1))
-            wo = mi.Vector3f(x, y, z)
+            wo = mi.warp.square_to_cosine_hemisphere(sample2)
             pdf = self.pdf(ctx, si, wo, active)
 
-
-        f_val = self.eval(ctx, si, wo, active) / pdf
         cos_theta = mi.Frame3f.cos_theta(wo)
+
+        f_val = self.eval(ctx, si, wo, active) * (cos_theta / pdf)
 
         bs = mi.BSDFSample3f()
         bs.wo = wo
@@ -263,11 +294,10 @@ class NeuralBSDF(mi.BSDF):
         bs.sampled_type = self._flags & mi.BSDFFlags.Diffuse
         bs.sampled_component = 0
         bs.eta = 1.0
-        denom = dr.maximum(pdf, 1e-6)
 
         weight = mi.Color3f(0.0)
         valid = active & (cos_theta > 0) & (pdf > 0)
-        weight = (f_val ) & valid
+        weight = (f_val) & valid
         return (bs, weight)
 
     def traverse(self, callback):

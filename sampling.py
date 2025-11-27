@@ -61,7 +61,7 @@ def random_wi_sample(rng: dr.random.Generator, n: int =1):
     sample_wi = mi.Point2f(rng.random(dr.auto.ad.Float, n), rng.random(dr.auto.ad.Float, n))
     wi_local = mi.warp.square_to_cosine_hemisphere(sample_wi)
     return wi_local
-
+dr.syntax
 def generate_batched_uv_samples_for_importance_sampling(mesh: mi.Mesh, num_samples_per_face: int, metal_tex, rough_tex, base_tex, normal_tex, generator : dr.random.Generator = None):
     
     faces = mesh.faces_buffer()
@@ -188,7 +188,7 @@ def pdf_diffuse(slope: mi.Vector2f, wo: mi.Vector3f):
     return dr.maximum(0.0, wo_local.z * dr.inv_pi)
 
 def pdf_specular(wi, wo, alpha, slope):
-    eps = 1e-6
+    eps = 0.0
     wh = dr.normalize(wi + wo)
     sign = dr.select(wh.z >= 0, 1.0, -1.0)
     wh *= sign
@@ -252,8 +252,8 @@ def sample_analytic(
     pdf_spec = pdf_specular(wi, wo, alpha, slopeSpec)
     pdf_diff = pdf_diffuse(slopeDiff, wo)
     pdf = weightSpec * pdf_spec + (1.0 - weightSpec) * pdf_diff
-    dr.eval(wo_spec, wo_diff, pdf_spec, pdf_diff, pdf)
-    return wo_spec, wo_diff, pdf_spec, pdf_diff, pdf
+    dr.eval(wo, pdf)
+    return wo, pdf
 
 
 

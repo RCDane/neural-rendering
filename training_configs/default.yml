@@ -1,9 +1,9 @@
 run_name: default_experiment
 batch_size: 5000
 importance_epochs: 20000
-decoder_epochs: 40000
+decoder_epochs: 20000
 texture_epochs: 20000
-learning_rate: 0.001
+learning_rate: 0.01
 weight_decay: 1e-6
 num_workers: 8
 hidden_dim: 64
@@ -13,8 +13,9 @@ output_folder: presentation/enc_dec_shading_3_layer
 use_decoder: true
 use_encoder: true
 use_shading_frame: true
-use_importance_sampling: false
+use_importance_sampling: true
 use_texture: false
+render_samples: 32
 networks:
   encoder:
     layers:
