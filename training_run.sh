@@ -22,5 +22,6 @@ if [ ! -f "$training_config" ]; then
   exit 1
 fi
 
+cp "$training_config" "$output_folder/"
 
-bsub < training.sh "$output_folder" "$training_config"
+# bsub < training.sh "$output_folder" "$training_config"
