@@ -18,7 +18,7 @@ from drjit.opt import Adam, GradScaler
 from src.utils import save_neural_network, load_neural_network
 import arguments_parsing
 
-from custom_bsdf_dr import NeuralBSDF
+from custom_bsdf_dr import NeuralBSDF, tanh_approx, sinh_approx
 
 
 OBJ = "data/lubricant_spray_1k.obj"
@@ -45,7 +45,7 @@ def l1(pred, target, eps=1e-6):
     return dr.abs(pred - target)
 
 dr.syntax
-def log_l1(pred, target, eps=1e-6):
+def log_l1(pred, target, eps=1e-8):
     target_safe = dr.maximum(target, eps)
     pred_safe = dr.maximum(pred, eps)
     
@@ -53,29 +53,40 @@ def log_l1(pred, target, eps=1e-6):
 
 dr.syntax
 def l2(pred, target):
-
     return dr.mean(dr.square(pred - target))
 
 dr.syntax
 def sigmoid(x):
     return 1 / (1 + dr.exp(-x))
     
-
 dr.syntax
-def kl_divergence(pred, target, eps=1e-9):
-    """
-    Computes the Kullback-Leibler divergence between two distributions.
-    Assumes samples are drawn from the target distribution.
-    D_KL(target || pred) = E_{x ~ target}[log(target(x)/pred(x))]
-    """
-    # Add a small epsilon to avoid log(0)
-    target_safe = dr.maximum(target, eps)
-    pred_safe = dr.maximum(pred, eps)
+def kl_divergence(p, q, eps=1e-9):
     
-    # Only compute loss where the target PDF is non-zero
-    loss = dr.abs(dr.log(target_safe) - dr.log(pred_safe))
+    p = dr.maximum(p, 0.0)
+    q = dr.maximum(q, 0.0)
     
-    return dr.mean(loss)
+    p = p / dr.sum(p) + eps
+    q = q / dr.sum(q) + eps
+    
+    loss = dr.sum(p * dr.abs(dr.log(p) - dr.log(q)))
+    
+    return loss
+    
+# dr.syntax
+# def kl_divergence(pred, target, eps=1e-9):
+#     """
+#     Computes the Kullback-Leibler divergence between two distributions.
+#     Assumes samples are drawn from the target distribution.
+#     D_KL(target || pred) = E_{x ~ target}[log(target(x)/pred(x))]
+#     """
+#     # Add a small epsilon to avoid log(0)
+#     target_safe = dr.maximum(target, eps)
+#     pred_safe = dr.maximum(pred, eps)
+    
+#     # Only compute loss where the target PDF is non-zero
+#     loss = dr.abs(dr.log(target_safe) - dr.log(pred_safe))
+    
+#     return dr.mean(loss)
 
 import tqdm
 import random
@@ -231,6 +242,7 @@ def train_decoder_n_sampler(
     
     
     wi_local = sampling.random_wi_sample(generator, dr.width(uv_coords))
+    wo_local = sampling.random_wi_sample(generator, dr.width(uv_coords))
     si.wi = wi_local
 
     ctx = mi.BSDFContext()
@@ -239,13 +251,16 @@ def train_decoder_n_sampler(
     s1 = generator.random(dr.auto.ad.Float, dr.width(uv_coords))
     s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(uv_coords)), generator.random(dr.auto.ad.Float, dr.width(uv_coords)))
     
+    # spectrum = bsdf.eval(ctx, si, wo_local)
+    # pdf = bsdf.pdf(ctx, si, wo_local)
     bs, spectrum = bsdf.sample(ctx, si, s1, s2)
-    
-
+    pdf = bs.pdf
     wo_local = bs.wo
 
-    pdf = bs.pdf
+
     zero_pdf = pdf <= 0.0
+    
+    
     
     
     
@@ -277,8 +292,9 @@ def train_decoder_n_sampler(
 
     unpacked_color = drad.Array3f(unpacked_pred[:3])
     
+
     
-    if importance_network is not None :
+    if importance_weights is not None:
         latent_vals = dr.detach(encoded_texel)
         unpacked_texel = drad.TensorXf16(latent_vals)
         
@@ -287,18 +303,24 @@ def train_decoder_n_sampler(
         params = importance_network(importance_input)
         decoded = drad.TensorXf(params)
 
-        alpha = mi.Vector3f(dr.exp(decoded[:3] - 3.0))
-        slope_spec = mi.Vector2f(dr.sinh(decoded[5:7]))
-        slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
-        weight_spec = drad.Float(sigmoid(decoded[7]))
-
+        alphaX = 1e-4 + 0.5 * (tanh_approx(decoded[0]) + 1.0)
+        alphaY = 1e-4 + 0.5 * (tanh_approx(decoded[1]) + 1.0)
+        rho = tanh_approx(decoded[2])
+        alpha = mi.Vector3f(alphaX, alphaY, rho)
+        slope_spec = mi.Vector2f(sinh_approx(decoded[5:7]))
+        slope_diff = mi.Vector2f(sinh_approx(decoded[5:7]))
+        weight_spec = drad.Float(dr.exp(decoded[7]))
+        # pdf_loss = drad.Float(0.0)
+        # for _ in range(5):
+        # s1 = generator.random(dr.auto.ad.Float, dr.width(uv_coords))
+        # s2 = mi.Point2f(generator.random(dr.auto.ad.Float, dr.width(uv_coords)), generator.random(dr.auto.ad.Float, dr.width(uv_coords)))
+        # bs1, _ = bsdf.sample(ctx, si, s1, s2)
+        # bspdf = bs1.pdf
+        # bswo = bs1.wo
         pdf_spec = sampling.pdf_specular(wi_local, wo_local, alpha, slope_spec)
         pdf_diff = sampling.pdf_diffuse(slope_diff, wo_local)
         pdf_pred_at_gt = weight_spec * pdf_spec + (1 - weight_spec) * pdf_diff
-        dr.eval(pdf_pred_at_gt)
-        
-        
-        pdf_loss = log_l1(pdf, pdf_pred_at_gt)
+        pdf_loss = log_l1(pdf, pdf_pred_at_gt)        
         pdf_loss = dr.select(zero_pdf, drad.Float(0.0), pdf_loss)
         pdf_loss = dr.mean(pdf_loss)
         dr.eval(pdf_loss)
@@ -668,6 +690,7 @@ _LAYER_MAP = {
     'Linear': lambda args: nn.Linear(*args),
     'ReLU': lambda args: nn.ReLU(),
     'Exp': lambda args: nn.Exp(),
+    'ScaleAdd' : lambda args: nn.ScaleAdd(*args)
 }
 
 def build_network(layer_specs):
@@ -716,17 +739,19 @@ def render_image(scene : mi.Scene, expected_samples: int):
     
     
     
-    samples_per_pass = 4
+    samples_per_pass = 16
     
     num_passes = float(expected_samples // samples_per_pass)
     
     render_bar = tqdm.tqdm( desc="Rendering Progress", unit="pass", total=int(num_passes))
     
+    integrator = mi.load_dict({
+        'type': 'path',
+    })
     
-    
-    image = mi.render(scene, spp=samples_per_pass, seed=np.random.randint(0, 10000)) / num_passes
+    image = mi.render(scene, spp=samples_per_pass,integrator=integrator, seed=np.random.randint(0, 10000)) / num_passes
     for i in range(int(num_passes) - 1):
-        image += mi.render(scene, spp=samples_per_pass, seed=np.random.randint(0, 10000)) / num_passes
+        image += mi.render(scene, spp=samples_per_pass,integrator=integrator, seed=np.random.randint(0, 10000)) / num_passes
         render_bar.update(1)
     render_bar.close()
     
@@ -775,15 +800,15 @@ def main():
 
     
     
-    importance_net = nn.Sequential(
-        nn.Linear(encoder_output_size + 3, 32),
-        nn.ReLU(),
-        nn.Linear(32, 32),
-        nn.ReLU(),
-        nn.Linear(32, 32),
-        nn.ReLU(),
-        nn.Linear(32, 9),  # alpha_x, alpha_y, rho, slopeSpec(2x), slopeDiff(2x), weightSpec, weightDiff
-    )
+    # importance_net = nn.Sequential(
+    #     nn.Linear(encoder_output_size + 3, 32),
+    #     nn.ReLU(),
+    #     nn.Linear(32, 32),
+    #     nn.ReLU(),
+    #     nn.Linear(32, 32),
+    #     nn.ReLU(),
+    #     nn.Linear(32, 9),  # alpha_x, alpha_y, rho, slopeSpec(2x), slopeDiff(2x), weightSpec, weightDiff
+    # )
     
 
     rng = dr.rng(seed=drad.UInt(0))
@@ -795,7 +820,7 @@ def main():
     encoder_network = build_network(net_cfg["encoder"]["layers"]).alloc(dtype=tranining_type, size=-1, rng=rng)
     shading_frame_network = build_network(net_cfg["shading_frame"]["layers"]).alloc(dtype=tranining_type, size=-1, rng=rng)
     net = build_network(net_cfg["bsdf"]["layers"]).alloc(dtype=tranining_type, size=-1, rng=rng)
-
+    importance_net = build_network(net_cfg["importance_sampler"]["layers"]).alloc(dtype=tranining_type, size=-1, rng=rng)
     print("Encoder Network:", encoder_network)
     print("Shading Frame Network:", shading_frame_network)
     print("BSDF Network:", net)
@@ -840,6 +865,7 @@ def main():
     dr.enable_grad(importance_weights)
     opt = Adam(
         lr=args.learning_rate, 
+        mask_updates=True,
         )
     opt['weights'] = drad.Float32(weights)
     opt['encoder_weights'] = drad.Float32(encoder_weights)
@@ -955,6 +981,8 @@ def main():
     
     
     
+    
+    
     for epoch in range(epochs):
         decoder_loss, pdf_loss = train_decoder_n_sampler(
             net, 
@@ -962,10 +990,10 @@ def main():
             shading_frame_network, 
             importance_net,
             opt, 
-            weights, 
-            encoder_weights, 
-            shading_frame_weights,
-            importance_weights, 
+            weights if args.use_decoder else None, 
+            encoder_weights if args.use_encoder else None, 
+            shading_frame_weights if args.use_shading_frame else None,
+            importance_weights if args.use_importance_sampling else None, 
             scaler, 
             mesh, 
             _metal_tex, 
@@ -974,9 +1002,9 @@ def main():
             _normal_tex, 
             generator)
         
-        pdf_loss_weight = 1.0 if epoch >= 20000 else 0.03
+        # pdf_loss_weight = 1.0 if epoch >= 20000 else 0.03
         
-        dr.backward(scaler.scale(decoder_loss+ pdf_loss*pdf_loss_weight))
+        dr.backward(scaler.scale(decoder_loss+ pdf_loss))
         scaler.step(opt)
         
         avg_loss += decoder_loss

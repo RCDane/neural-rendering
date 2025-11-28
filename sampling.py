@@ -69,8 +69,7 @@ def generate_batched_uv_samples_for_importance_sampling(mesh: mi.Mesh, num_sampl
     face_count = dr.width(faces) // 3
 
     indices = dr.arange(dr.auto.ad.UInt, face_count)
-    areas = calculate_face_area(indices, mesh)
-    area_total = dr.sum(areas)
+
 
     uv_samples = dr.zeros(dr.auto.ad.Array2f, shape= dr.width(indices))
     rng = generator

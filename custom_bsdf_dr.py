@@ -15,6 +15,14 @@ dr.syntax
 def sigmoid(x):
     return 1 / (1 + dr.exp(-x))
 
+dr.syntax
+def tanh_approx(x):
+    return x / dr.sqrt(1 + x * x)
+
+dr.syntax
+def sinh_approx(x):
+    return x * dr.sqrt(1 + x * x)
+
 class NeuralBSDF(mi.BSDF):
     """
     Python BSDF plugin that evaluates a trained SimpleNeuralBSDF.
@@ -233,10 +241,13 @@ class NeuralBSDF(mi.BSDF):
         params = self.importance_sampling_model(importance_input)
         decoded = drad.TensorXf(params)
 
-        alpha = mi.Vector3f(dr.exp(decoded[:3] - 3.0))
-        slope_spec = mi.Vector2f(dr.sinh(decoded[3:5]))
-        slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
-        weight_spec = drad.Float(sigmoid(decoded[7]))
+        alphaX = 1e-4 + 0.5 * (tanh_approx(decoded[0]) + 1.0)
+        alphaY = 1e-4 + 0.5 * (tanh_approx(decoded[1]) + 1.0)
+        rho = tanh_approx(decoded[2])
+        alpha = mi.Vector3f(alphaX, alphaY, rho)
+        slope_spec = mi.Vector2f(sinh_approx(decoded[5:7]))
+        slope_diff = mi.Vector2f(sinh_approx(decoded[5:7]))
+        weight_spec = drad.Float(dr.exp(decoded[7]))
 
         pdf_spec = sampling.pdf_specular(wi, wo, alpha, slope_spec)
         pdf_diff = sampling.pdf_diffuse(slope_diff, wo)
@@ -270,10 +281,13 @@ class NeuralBSDF(mi.BSDF):
             params = self.importance_sampling_model(importance_input)
             decoded = drad.TensorXf(params)
 
-            alpha = mi.Vector3f(dr.exp(decoded[:3]-3.0))
-            slope_spec = mi.Vector2f(dr.sinh(decoded[3:5]))
-            slope_diff = mi.Vector2f(dr.sinh(decoded[5:7]))
-            weight_spec = drad.Float(sigmoid(decoded[7]))
+            alphaX = 1e-4 + 0.5 * (tanh_approx(decoded[0]) + 1.0)
+            alphaY = 1e-4 + 0.5 * (tanh_approx(decoded[1]) + 1.0)
+            rho = tanh_approx(decoded[2])
+            alpha = mi.Vector3f(alphaX, alphaY, rho)
+            slope_spec = mi.Vector2f(sinh_approx(decoded[5:7]))
+            slope_diff = mi.Vector2f(sinh_approx(decoded[5:7]))
+            weight_spec = drad.Float(dr.exp(decoded[7]))
 
             wo, pdf = sampling.sample_analytic(
                 drad.Array3f16(alpha), drad.Array2f16(slope_spec), drad.Array2f16(slope_diff), drad.Float16(weight_spec),
