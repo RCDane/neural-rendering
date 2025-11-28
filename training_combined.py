@@ -45,7 +45,7 @@ def l1(pred, target, eps=1e-6):
     return dr.abs(pred - target)
 
 dr.syntax
-def log_l1(pred, target, eps=1e-8):
+def log_l1(pred, target, eps=1e-6):
     target_safe = dr.maximum(target, eps)
     pred_safe = dr.maximum(pred, eps)
     
@@ -60,7 +60,7 @@ def sigmoid(x):
     return 1 / (1 + dr.exp(-x))
     
 dr.syntax
-def kl_divergence(p, q, eps=1e-9):
+def kl_divergence(p, q, eps=1e-6):
     
     p = dr.maximum(p, 0.0)
     q = dr.maximum(q, 0.0)
@@ -321,7 +321,7 @@ def train_decoder_n_sampler(
         pdf_diff = sampling.pdf_diffuse(slope_diff, wo_local)
         pdf_pred_at_gt = weight_spec * pdf_spec + (1 - weight_spec) * pdf_diff
         pdf_loss = log_l1(pdf, pdf_pred_at_gt)        
-        pdf_loss = dr.select(zero_pdf, drad.Float(0.0), pdf_loss)
+        # pdf_loss = dr.select(zero_pdf, drad.Float(0.0), pdf_loss)
         pdf_loss = dr.mean(pdf_loss)
         dr.eval(pdf_loss)
     else:
@@ -333,7 +333,7 @@ def train_decoder_n_sampler(
 
     
     bsdf_loss = dr.mean(bsdf_loss)
-    bsdf_loss = dr.select(zero_pdf, drad.Float(0.0), bsdf_loss)
+    # bsdf_loss = dr.select(zero_pdf, drad.Float(0.0), bsdf_loss)
     bsdf_loss = dr.mean(bsdf_loss)
 
     dr.eval(bsdf_loss, pdf_loss)
@@ -955,7 +955,8 @@ def main():
     
     
     opt = Adam(
-        lr=args.learning_rate, 
+        lr=args.learning_rate
+        
         )
     opt['weights'] = drad.Float32(weights)
     opt['encoder_weights'] = drad.Float32(encoder_weights)
@@ -1003,7 +1004,12 @@ def main():
             generator)
         
         # pdf_loss_weight = 1.0 if epoch >= 20000 else 0.03
-        
+        if dr.any(dr.isinf(pdf_loss)) or dr.any(dr.isnan(pdf_loss)):
+            print("Encountered NaN or Inf in pdf_loss, skipping optimizer step.")
+            continue
+        if dr.any(dr.isinf(decoder_loss)) or dr.any(dr.isnan(decoder_loss)):
+            print("Encountered NaN or Inf in decoder_loss, skipping optimizer step.")
+            continue
         dr.backward(scaler.scale(decoder_loss+ pdf_loss))
         scaler.step(opt)
         

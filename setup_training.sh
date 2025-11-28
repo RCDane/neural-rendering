@@ -24,4 +24,4 @@ fi
 
 cp "$training_config" "$output_folder/"
 
-# bsub < training.sh "$output_folder" "$training_config"
+OUTPUT_FOLDER="$output_folder" TRAINING_CONFIG="$training_config" bsub < training.sh

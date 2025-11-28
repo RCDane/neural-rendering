@@ -1,7 +1,7 @@
 #!/bin/sh 
 ### General options 
 ### -- specify queue -- 
-#BSUB -q gpua100
+#BSUB -q gpua10
 ### -- set the job Name -- 
 #BSUB -J neural_rendering_training
 ### -- ask for number of cores (default: 1) -- 
@@ -9,7 +9,7 @@
 ### -- specify that the cores must be on the same host -- 
 #BSUB -R "span[hosts=1]"
 # ### -- specify that we need 4GB of memory per core/slot -- 
-# #BSUB -R "rusage[mem=4GB]"
+#BSUB -R "rusage[mem=4GB]"
 ### -- specify that we want 1 GPU --
 #BSUB -gpu "num=1"
 ### -- specify that we want the job to get killed if it exceeds 5 GB per core/slot -- 
@@ -25,5 +25,12 @@
 module load cuda/12.9.1
 nvidia-smi
 
+echo "Starting training job..."
+echo "Output folder: $OUTPUT_FOLDER"
+echo "Training config: $TRAINING_CONFIG"
+
+output_dir=output/IS_64_3
+
 source ../.nr-env/bin/activate
-python3 training_combined.py --output_folder output/nov_20_11/run3 --training_config training_configs/hpc_batch.yml > output/output.log
+# python3 training_combined.py --output_folder "$OUTPUT_FOLDER" --training_config "$TRAINING_CONFIG" > "$OUTPUT_FOLDER/output.log"
+python3 training_combined.py --config "$output_dir/default.yml" > "$output_dir/output.log"
