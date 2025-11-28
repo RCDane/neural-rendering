@@ -657,6 +657,8 @@ def parse_config_file(config_path: str, args) -> dict:
     
     with open(config_path, 'r') as file:
         yaml_data = yaml.safe_load(file)
+        
+
     if 'epochs' in yaml_data:
         args.epochs = yaml_data['epochs']
     if 'learning_rate' in yaml_data:
@@ -673,8 +675,9 @@ def parse_config_file(config_path: str, args) -> dict:
         args.texture_epochs = yaml_data['texture_epochs']
     if 'texture_sample_size' in yaml_data:
         args.texture_sample_size = yaml_data['texture_sample_size']
-    if 'output_folder' in yaml_data:
-        args.output_folder = yaml_data['output_folder']
+    if 'output_folder' not in yaml_data:
+        config_dir = os.path.dirname(os.path.abspath(config_path))
+        args.output_folder = config_dir
     if 'use_encoder' in yaml_data:
         args.use_encoder = yaml_data['use_encoder']
     if 'use_shading_frame' in yaml_data:
