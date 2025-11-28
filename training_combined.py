@@ -241,6 +241,8 @@ def train_decoder_n_sampler(
     mesh, 1, _metal_tex, _rough_tex, _base_tex, _normal_tex, generator)
     
     
+    # print(dr.width(uv_coords))
+    
     wi_local = sampling.random_wi_sample(generator, dr.width(uv_coords))
     wo_local = sampling.random_wi_sample(generator, dr.width(uv_coords))
     si.wi = wi_local
@@ -258,7 +260,7 @@ def train_decoder_n_sampler(
     wo_local = bs.wo
 
 
-    zero_pdf = pdf <= 0.0
+    valid = (pdf <= 0.0) 
     
     
     
@@ -281,11 +283,11 @@ def train_decoder_n_sampler(
     input_tensor = dr.nn.CoopVec(*drad.TensorXf16(wi_transformed), *drad.TensorXf16(wo_transformed), *unpacked_texel)
     
     
-    cos_theta_o = mi.Frame3f.cos_theta(wo_local)
+    cos_theta_o = dr.maximum(mi.Frame3f.cos_theta(wo_local), 1e-4)
 
     # pdf = dr.maximum(pdf, 1e-6)
     # print(spectrum)
-    target = drad.Array3f(spectrum * pdf / cos_theta_o)
+    target = drad.Array3f(spectrum * pdf)
     pred =  net(input_tensor)
     
     unpacked_pred = drad.TensorXf(pred)
@@ -321,7 +323,7 @@ def train_decoder_n_sampler(
         pdf_diff = sampling.pdf_diffuse(slope_diff, wo_local)
         pdf_pred_at_gt = weight_spec * pdf_spec + (1 - weight_spec) * pdf_diff
         pdf_loss = log_l1(pdf, pdf_pred_at_gt)        
-        # pdf_loss = dr.select(zero_pdf, drad.Float(0.0), pdf_loss)
+        pdf_loss = dr.select(valid, drad.Float(0.0), pdf_loss)
         pdf_loss = dr.mean(pdf_loss)
         dr.eval(pdf_loss)
     else:
@@ -333,7 +335,7 @@ def train_decoder_n_sampler(
 
     
     bsdf_loss = dr.mean(bsdf_loss)
-    # bsdf_loss = dr.select(zero_pdf, drad.Float(0.0), bsdf_loss)
+    bsdf_loss = dr.select(valid, drad.Float(0.0), bsdf_loss)
     bsdf_loss = dr.mean(bsdf_loss)
 
     dr.eval(bsdf_loss, pdf_loss)

@@ -300,7 +300,7 @@ class NeuralBSDF(mi.BSDF):
 
         cos_theta = mi.Frame3f.cos_theta(wo)
 
-        f_val = self.eval(ctx, si, wo, active) * (cos_theta / pdf)
+        f_val = self.eval(ctx, si, wo, active) / pdf
 
         bs = mi.BSDFSample3f()
         bs.wo = wo

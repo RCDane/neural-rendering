@@ -61,20 +61,32 @@ def random_wi_sample(rng: dr.random.Generator, n: int =1):
     sample_wi = mi.Point2f(rng.random(dr.auto.ad.Float, n), rng.random(dr.auto.ad.Float, n))
     wi_local = mi.warp.square_to_cosine_hemisphere(sample_wi)
     return wi_local
+
+def convert_to_int_array(arr, min = 0, max = 1000000000):
+    arr = arr * (max - min) + min
+    return dr.auto.ad.UInt(arr)
+
 dr.syntax
-def generate_batched_uv_samples_for_importance_sampling(mesh: mi.Mesh, num_samples_per_face: int, metal_tex, rough_tex, base_tex, normal_tex, generator : dr.random.Generator = None):
+def generate_batched_uv_samples_for_importance_sampling(mesh: mi.Mesh, num_samples_per_face: int, metal_tex, rough_tex, base_tex, normal_tex, generator : dr.random.Generator = None, max_samples : int = 10000000000):
     
     faces = mesh.faces_buffer()
 
     face_count = dr.width(faces) // 3
 
     indices = dr.arange(dr.auto.ad.UInt, face_count)
-
-
+    count = dr.width(indices) * num_samples_per_face
+    if count > max_samples:
+        count = max_samples
+    # print("Total samples to generate:", count)
     uv_samples = dr.zeros(dr.auto.ad.Array2f, shape= dr.width(indices))
     rng = generator
     # sample = sample_face_uvs(indices, mesh, rng)
     samples_multiple = sample_face_uvs_multiple(indices, mesh, rng, num_samples_per_face)
+    
+    float_samples = rng.random(dr.auto.ad.Float, count)
+    sample_indices = convert_to_int_array(float_samples, 0, dr.width(samples_multiple))
+    samples_multiple = dr.gather(mi.Point2f,samples_multiple, sample_indices)
+    
     # dr.eval(samples_multiple)
 
 
