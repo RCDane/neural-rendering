@@ -1,0 +1,6 @@
+Epoch Training Progress:   0%|          | 0/100000 [00:00<?, ?sample/s]
+Epoch Training Progress:   0%|          | 0/100000 [00:00<?, ?sample/s][AEpoch Training Progress:   0%|          | 0/100000 [00:00<?, ?sample/s]
+
+Epoch Training Progress:  10%|#         | 10000/100000 [01:54<17:06, 87.64sample/s][A
+Epoch Training Progress:  10%|#         | 10000/100000 [02:27<17:06, 87.64sample/s][A
+Epoch Training Progress:  10%|#         | 10000/100000 [02:27<17:06, 87.64sample/s, avg_loss=[0.300775], avg_pdf_loss=[0.238981], lr=0.001][A

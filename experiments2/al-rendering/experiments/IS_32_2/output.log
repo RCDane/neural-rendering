@@ -1,0 +1,27 @@
+Using training type: <class 'drjit.cuda.ad.TensorXf16'>
+Encoder Network: Sequential(
+  Linear(in_features=8, out_features=64),
+  ReLU(),
+  Linear(in_features=64, out_features=64),
+  ReLU(),
+  Linear(in_features=64, out_features=64),
+  ReLU(),
+  Linear(in_features=64, out_features=8)
+)
+Shading Frame Network: Sequential(
+  Linear(in_features=8, out_features=12)
+)
+BSDF Network: Sequential(
+  Linear(in_features=14, out_features=32),
+  ReLU(),
+  Linear(in_features=32, out_features=32),
+  ReLU(),
+  Linear(in_features=32, out_features=3),
+  Exp()
+)
+Encountered NaN or Inf in decoder_loss, skipping optimizer step.
+
+using: decoder: True encoder: True shading frame: True importance sampling: True texture: False 
+
+Neural BSDF loaded.
+test 123

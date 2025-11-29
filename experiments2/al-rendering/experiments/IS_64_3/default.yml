@@ -1,0 +1,52 @@
+run_name: default_experiment
+batch_size: 5000
+importance_epochs: 20000
+decoder_epochs: 100000
+texture_epochs: 30000
+learning_rate: 0.001
+weight_decay: 1e-6
+num_workers: 8
+hidden_dim: 64
+render_every: 100000
+print_every: 1000
+output_folder: output/IS_64_3
+use_decoder: true
+use_encoder: true
+use_shading_frame: true
+use_importance_sampling: true
+use_texture: false
+render_samples: 128
+networks:
+  encoder:
+    layers:
+      - Linear: [8, 64]
+      - ReLU: []
+      - Linear: [64, 64]
+      - ReLU: []
+      - Linear: [64, 64]
+      - ReLU: []
+      - Linear: [64, 64]
+      - ReLU: []
+      - Linear: [64, 8]
+  shading_frame:
+    layers:
+      - Linear: [8, 12]
+  bsdf:
+    layers:
+      - Linear: [14, 64]
+      - ReLU: []
+      - Linear: [64, 64]
+      - ReLU: []
+      - Linear: [64, 64]
+      - ReLU: []
+      - Linear: [64, 3]
+      - Exp: []
+  importance_sampler:
+    layers:
+      - Linear: [11, 64]
+      - ReLU: []
+      - Linear: [64, 64]
+      - ReLU: []
+      - Linear: [64, 64]
+      - ReLU: []
+      - Linear: [64, 9]
