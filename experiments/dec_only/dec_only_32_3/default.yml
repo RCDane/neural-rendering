@@ -1,7 +1,7 @@
 run_name: default_experiment
 batch_size: 5000
 importance_epochs: 20000
-decoder_epochs: 100000
+decoder_epochs: 250000
 texture_epochs: 30000
 learning_rate: 0.001
 weight_decay: 1e-6
@@ -11,16 +11,14 @@ render_every: 100000
 print_every: 1000
 use_decoder: true
 use_encoder: true
-use_shading_frame: true
-use_importance_sampling: true
+use_shading_frame: false
+use_importance_sampling: false
 use_texture: false
-render_samples: 512
+render_samples: 2048
 networks:
   encoder:
     layers:
       - Linear: [8, 64]
-      - ReLU: []
-      - Linear: [64, 64]
       - ReLU: []
       - Linear: [64, 64]
       - ReLU: []
@@ -32,20 +30,18 @@ networks:
       - Linear: [8, 12]
   bsdf:
     layers:
-      - Linear: [14, 64]
+      - Linear: [14, 32]
       - ReLU: []
-      - Linear: [64, 64]
+      - Linear: [32, 32]
       - ReLU: []
-      - Linear: [64, 64]
+      - Linear: [32, 32]
       - ReLU: []
-      - Linear: [64, 3]
+      - Linear: [32, 3]
       - Exp: []
   importance_sampler:
     layers:
-      - Linear: [11, 64]
+      - Linear: [11, 32]
       - ReLU: []
-      - Linear: [64, 64]
+      - Linear: [32, 32]
       - ReLU: []
-      - Linear: [64, 64]
-      - ReLU: []
-      - Linear: [64, 9]
+      - Linear: [32, 9]

@@ -43,14 +43,17 @@ source ../.nr-env/bin/activate
 find "$SOURCE_DIR" -name "default.yml" | while read config_file; do
     # Get the directory containing the config
     config_dir=$(dirname "$config_file")
+    rel_path="${config_file#$SOURCE_DIR/}"
+    dest_config_dir=$(dirname "$DEST_DIR/$rel_path")
+    dest_config_file="$DEST_DIR/$rel_path"
     
     echo "========================================="
     echo "Starting training for: $config_dir"
-    echo "Config file: $config_file"
+    echo "Config file: $dest_config_file"
     echo "========================================="
     
     # Run training
-    python3 training_combined.py --config "$config_file" > "$config_dir/output.log" 2>&1
+    python3 training_combined.py --config "$dest_config_file" > "$dest_config_dir/output.log" 2>&1
     
     exit_code=$?
     if [ $exit_code -eq 0 ]; then

@@ -91,8 +91,8 @@ def kl_divergence(p, q, eps=1e-6):
 import tqdm
 import random
 
-def run_shading_frame_network(network, input, wi, wo):
-    if network is None:
+def run_shading_frame_network(network, input, wi, wo, use_shading_frame=True):
+    if network is None or not use_shading_frame:
         return wi, wo
     frame_vectors = network(input)
     
@@ -274,7 +274,12 @@ def train_decoder_n_sampler(
     
     unpacked_texel = drad.TensorXf16(encoded_texel)
     
-    wi_transformed, wo_transformed = run_shading_frame_network(shading_frame_network, encoded_texel, wi_local, wo_local)
+    wi_transformed, wo_transformed = run_shading_frame_network(
+        shading_frame_network, 
+        encoded_texel, 
+        wi_local, 
+        wo_local, 
+        use_shading_frame=(shading_frame_weights is not None))
     
 
 
@@ -1262,8 +1267,8 @@ def main():
 			'fov': 45,
 			'film': {
 				'type': 'hdrfilm',
-				'width': 400,
-				'height': 400,
+				'width': 1024,
+				'height': 1024,
 				'rfilter': {'type': 'box'}
 			}
 		},

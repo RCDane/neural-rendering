@@ -1,0 +1,530 @@
+Using training type: <class 'drjit.cuda.ad.TensorXf16'>
+Encoder Network: Sequential(
+  Linear(in_features=8, out_features=64),
+  ReLU(),
+  Linear(in_features=64, out_features=64),
+  ReLU(),
+  Linear(in_features=64, out_features=64),
+  ReLU(),
+  Linear(in_features=64, out_features=8)
+)
+Shading Frame Network: Sequential(
+  Linear(in_features=8, out_features=12)
+)
+BSDF Network: Sequential(
+  Linear(in_features=14, out_features=32),
+  ReLU(),
+  Linear(in_features=32, out_features=32),
+  ReLU(),
+  Linear(in_features=32, out_features=32),
+  ReLU(),
+  Linear(in_features=32, out_features=3),
+  Exp()
+)
+Epoch Training Progress:   0%|          | 0/250000 [00:00<?, ?sample/s]
+Epoch Training Progress:   0%|          | 0/250000 [00:00<?, ?sample/s][AEpoch Training Progress:   0%|          | 0/250000 [00:00<?, ?sample/s]
+
+Epoch Training Progress:   0%|          | 1000/250000 [00:02<10:00, 414.39sample/s][A
+Epoch Training Progress:   0%|          | 1000/250000 [00:02<10:00, 414.39sample/s, avg_loss=[0.837745], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   1%|          | 2000/250000 [00:04<09:03, 456.60sample/s, avg_loss=[0.837745], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   1%|          | 2000/250000 [00:04<09:03, 456.60sample/s, avg_loss=[0.451768], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   1%|          | 3000/250000 [00:06<08:43, 471.97sample/s, avg_loss=[0.451768], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   1%|          | 3000/250000 [00:06<08:43, 471.97sample/s, avg_loss=[0.302117], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   2%|▏         | 4000/250000 [00:08<08:32, 479.60sample/s, avg_loss=[0.302117], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   2%|▏         | 4000/250000 [00:08<08:32, 479.60sample/s, avg_loss=[0.255134], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   2%|▏         | 5000/250000 [00:10<08:26, 483.87sample/s, avg_loss=[0.255134], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   2%|▏         | 5000/250000 [00:10<08:26, 483.87sample/s, avg_loss=[0.227438], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   2%|▏         | 6000/250000 [00:12<08:21, 486.55sample/s, avg_loss=[0.227438], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   2%|▏         | 6000/250000 [00:12<08:21, 486.55sample/s, avg_loss=[0.212704], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   3%|▎         | 7000/250000 [00:14<08:17, 488.35sample/s, avg_loss=[0.212704], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   3%|▎         | 7000/250000 [00:14<08:17, 488.35sample/s, avg_loss=[0.207126], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   3%|▎         | 8000/250000 [00:16<08:14, 489.53sample/s, avg_loss=[0.207126], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   3%|▎         | 8000/250000 [00:16<08:14, 489.53sample/s, avg_loss=[0.195968], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   4%|▎         | 9000/250000 [00:18<08:11, 490.23sample/s, avg_loss=[0.195968], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   4%|▎         | 9000/250000 [00:18<08:11, 490.23sample/s, avg_loss=[0.189449], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   4%|▍         | 10000/250000 [00:20<08:09, 490.70sample/s, avg_loss=[0.189449], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   4%|▍         | 10000/250000 [00:20<08:09, 490.70sample/s, avg_loss=[0.18319], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:   4%|▍         | 11000/250000 [00:22<08:06, 491.05sample/s, avg_loss=[0.18319], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   4%|▍         | 11000/250000 [00:22<08:06, 491.05sample/s, avg_loss=[0.1791], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:   5%|▍         | 12000/250000 [00:24<08:04, 491.30sample/s, avg_loss=[0.1791], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   5%|▍         | 12000/250000 [00:24<08:04, 491.30sample/s, avg_loss=[0.17437], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   5%|▌         | 13000/250000 [00:26<08:02, 491.54sample/s, avg_loss=[0.17437], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   5%|▌         | 13000/250000 [00:26<08:02, 491.54sample/s, avg_loss=[0.170803], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   6%|▌         | 14000/250000 [00:28<07:59, 491.71sample/s, avg_loss=[0.170803], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   6%|▌         | 14000/250000 [00:28<07:59, 491.71sample/s, avg_loss=[0.16617], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:   6%|▌         | 15000/250000 [00:30<07:57, 491.85sample/s, avg_loss=[0.16617], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   6%|▌         | 15000/250000 [00:30<07:57, 491.85sample/s, avg_loss=[0.163233], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   6%|▋         | 16000/250000 [00:32<07:55, 491.87sample/s, avg_loss=[0.163233], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   6%|▋         | 16000/250000 [00:32<07:55, 491.87sample/s, avg_loss=[0.160475], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   7%|▋         | 17000/250000 [00:34<07:53, 491.74sample/s, avg_loss=[0.160475], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   7%|▋         | 17000/250000 [00:34<07:53, 491.74sample/s, avg_loss=[0.158485], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   7%|▋         | 18000/250000 [00:36<07:51, 491.64sample/s, avg_loss=[0.158485], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   7%|▋         | 18000/250000 [00:36<07:51, 491.64sample/s, avg_loss=[0.157007], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   8%|▊         | 19000/250000 [00:39<07:49, 491.74sample/s, avg_loss=[0.157007], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   8%|▊         | 19000/250000 [00:39<07:49, 491.74sample/s, avg_loss=[0.153037], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   8%|▊         | 20000/250000 [00:41<07:47, 491.74sample/s, avg_loss=[0.153037], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   8%|▊         | 20000/250000 [00:41<07:47, 491.74sample/s, avg_loss=[0.152225], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   8%|▊         | 21000/250000 [00:43<07:45, 491.71sample/s, avg_loss=[0.152225], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   8%|▊         | 21000/250000 [00:43<07:45, 491.71sample/s, avg_loss=[0.149466], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   9%|▉         | 22000/250000 [00:45<07:43, 492.03sample/s, avg_loss=[0.149466], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   9%|▉         | 22000/250000 [00:45<07:43, 492.03sample/s, avg_loss=[0.149411], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   9%|▉         | 23000/250000 [00:47<07:41, 492.31sample/s, avg_loss=[0.149411], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:   9%|▉         | 23000/250000 [00:47<07:41, 492.31sample/s, avg_loss=[0.147088], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  10%|▉         | 24000/250000 [00:49<07:38, 492.46sample/s, avg_loss=[0.147088], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  10%|▉         | 24000/250000 [00:49<07:38, 492.46sample/s, avg_loss=[0.145067], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  10%|█         | 25000/250000 [00:51<07:36, 492.55sample/s, avg_loss=[0.145067], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  10%|█         | 25000/250000 [00:51<07:36, 492.55sample/s, avg_loss=[0.144204], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  10%|█         | 26000/250000 [00:53<07:34, 492.50sample/s, avg_loss=[0.144204], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  10%|█         | 26000/250000 [00:53<07:34, 492.50sample/s, avg_loss=[0.142674], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  11%|█         | 27000/250000 [00:55<07:32, 492.60sample/s, avg_loss=[0.142674], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  11%|█         | 27000/250000 [00:55<07:32, 492.60sample/s, avg_loss=[0.141579], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  11%|█         | 28000/250000 [00:57<07:30, 492.58sample/s, avg_loss=[0.141579], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  11%|█         | 28000/250000 [00:57<07:30, 492.58sample/s, avg_loss=[0.140035], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  12%|█▏        | 29000/250000 [00:59<07:28, 492.74sample/s, avg_loss=[0.140035], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  12%|█▏        | 29000/250000 [00:59<07:28, 492.74sample/s, avg_loss=[0.139684], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  12%|█▏        | 30000/250000 [01:01<07:27, 491.99sample/s, avg_loss=[0.139684], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  12%|█▏        | 30000/250000 [01:01<07:27, 491.99sample/s, avg_loss=[0.138344], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  12%|█▏        | 31000/250000 [01:03<07:25, 492.04sample/s, avg_loss=[0.138344], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  12%|█▏        | 31000/250000 [01:03<07:25, 492.04sample/s, avg_loss=[0.137259], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  13%|█▎        | 32000/250000 [01:05<07:22, 492.30sample/s, avg_loss=[0.137259], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  13%|█▎        | 32000/250000 [01:05<07:22, 492.30sample/s, avg_loss=[0.13677], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  13%|█▎        | 33000/250000 [01:07<07:20, 492.39sample/s, avg_loss=[0.13677], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  13%|█▎        | 33000/250000 [01:07<07:20, 492.39sample/s, avg_loss=[0.135557], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  14%|█▎        | 34000/250000 [01:09<07:18, 492.09sample/s, avg_loss=[0.135557], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  14%|█▎        | 34000/250000 [01:09<07:18, 492.09sample/s, avg_loss=[0.133939], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  14%|█▍        | 35000/250000 [01:11<07:16, 492.12sample/s, avg_loss=[0.133939], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  14%|█▍        | 35000/250000 [01:11<07:16, 492.12sample/s, avg_loss=[0.133164], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  14%|█▍        | 36000/250000 [01:13<07:14, 492.32sample/s, avg_loss=[0.133164], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  14%|█▍        | 36000/250000 [01:13<07:14, 492.32sample/s, avg_loss=[0.133341], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  15%|█▍        | 37000/250000 [01:15<07:13, 491.10sample/s, avg_loss=[0.133341], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  15%|█▍        | 37000/250000 [01:15<07:13, 491.10sample/s, avg_loss=[0.131933], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  15%|█▌        | 38000/250000 [01:17<07:11, 490.86sample/s, avg_loss=[0.131933], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  15%|█▌        | 38000/250000 [01:17<07:11, 490.86sample/s, avg_loss=[0.132023], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  16%|█▌        | 39000/250000 [01:19<07:10, 490.02sample/s, avg_loss=[0.132023], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  16%|█▌        | 39000/250000 [01:19<07:10, 490.02sample/s, avg_loss=[0.130697], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  16%|█▌        | 40000/250000 [01:21<07:09, 489.36sample/s, avg_loss=[0.130697], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  16%|█▌        | 40000/250000 [01:21<07:09, 489.36sample/s, avg_loss=[0.130727], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  16%|█▋        | 41000/250000 [01:23<07:06, 489.92sample/s, avg_loss=[0.130727], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  16%|█▋        | 41000/250000 [01:23<07:06, 489.92sample/s, avg_loss=[0.129563], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  17%|█▋        | 42000/250000 [01:25<07:03, 490.80sample/s, avg_loss=[0.129563], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  17%|█▋        | 42000/250000 [01:25<07:03, 490.80sample/s, avg_loss=[0.128903], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  17%|█▋        | 43000/250000 [01:27<07:02, 490.10sample/s, avg_loss=[0.128903], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  17%|█▋        | 43000/250000 [01:27<07:02, 490.10sample/s, avg_loss=[0.128728], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  18%|█▊        | 44000/250000 [01:29<07:00, 490.37sample/s, avg_loss=[0.128728], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  18%|█▊        | 44000/250000 [01:29<07:00, 490.37sample/s, avg_loss=[0.128702], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  18%|█▊        | 45000/250000 [01:31<06:57, 490.97sample/s, avg_loss=[0.128702], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  18%|█▊        | 45000/250000 [01:31<06:57, 490.97sample/s, avg_loss=[0.127939], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  18%|█▊        | 46000/250000 [01:33<06:55, 490.52sample/s, avg_loss=[0.127939], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  18%|█▊        | 46000/250000 [01:33<06:55, 490.52sample/s, avg_loss=[0.126544], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  19%|█▉        | 47000/250000 [01:35<06:53, 491.01sample/s, avg_loss=[0.126544], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  19%|█▉        | 47000/250000 [01:35<06:53, 491.01sample/s, avg_loss=[0.126765], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  19%|█▉        | 48000/250000 [01:38<06:51, 491.31sample/s, avg_loss=[0.126765], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  19%|█▉        | 48000/250000 [01:38<06:51, 491.31sample/s, avg_loss=[0.126026], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  20%|█▉        | 49000/250000 [01:40<06:49, 490.33sample/s, avg_loss=[0.126026], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  20%|█▉        | 49000/250000 [01:40<06:49, 490.33sample/s, avg_loss=[0.125563], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  20%|██        | 50000/250000 [01:42<06:47, 490.70sample/s, avg_loss=[0.125563], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  20%|██        | 50000/250000 [01:42<06:47, 490.70sample/s, avg_loss=[0.12525], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  20%|██        | 51000/250000 [01:44<06:45, 491.21sample/s, avg_loss=[0.12525], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  20%|██        | 51000/250000 [01:44<06:45, 491.21sample/s, avg_loss=[0.124755], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  21%|██        | 52000/250000 [01:46<06:42, 491.59sample/s, avg_loss=[0.124755], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  21%|██        | 52000/250000 [01:46<06:42, 491.59sample/s, avg_loss=[0.124169], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  21%|██        | 53000/250000 [01:48<06:40, 491.71sample/s, avg_loss=[0.124169], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  21%|██        | 53000/250000 [01:48<06:40, 491.71sample/s, avg_loss=[0.123517], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  22%|██▏       | 54000/250000 [01:50<06:38, 491.95sample/s, avg_loss=[0.123517], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  22%|██▏       | 54000/250000 [01:50<06:38, 491.95sample/s, avg_loss=[0.123595], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  22%|██▏       | 55000/250000 [01:52<06:36, 492.00sample/s, avg_loss=[0.123595], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  22%|██▏       | 55000/250000 [01:52<06:36, 492.00sample/s, avg_loss=[0.122927], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  22%|██▏       | 56000/250000 [01:54<06:34, 491.87sample/s, avg_loss=[0.122927], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  22%|██▏       | 56000/250000 [01:54<06:34, 491.87sample/s, avg_loss=[0.122414], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  23%|██▎       | 57000/250000 [01:56<06:32, 492.01sample/s, avg_loss=[0.122414], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  23%|██▎       | 57000/250000 [01:56<06:32, 492.01sample/s, avg_loss=[0.122893], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  23%|██▎       | 58000/250000 [01:58<06:30, 492.06sample/s, avg_loss=[0.122893], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  23%|██▎       | 58000/250000 [01:58<06:30, 492.06sample/s, avg_loss=[0.120916], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  24%|██▎       | 59000/250000 [02:00<06:28, 492.26sample/s, avg_loss=[0.120916], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  24%|██▎       | 59000/250000 [02:00<06:28, 492.26sample/s, avg_loss=[0.121291], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  24%|██▍       | 60000/250000 [02:02<06:26, 492.13sample/s, avg_loss=[0.121291], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  24%|██▍       | 60000/250000 [02:02<06:26, 492.13sample/s, avg_loss=[0.120662], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  24%|██▍       | 61000/250000 [02:04<06:24, 492.13sample/s, avg_loss=[0.120662], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  24%|██▍       | 61000/250000 [02:04<06:24, 492.13sample/s, avg_loss=[0.120439], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  25%|██▍       | 62000/250000 [02:06<06:22, 492.08sample/s, avg_loss=[0.120439], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  25%|██▍       | 62000/250000 [02:06<06:22, 492.08sample/s, avg_loss=[0.119353], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  25%|██▌       | 63000/250000 [02:08<06:19, 492.21sample/s, avg_loss=[0.119353], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  25%|██▌       | 63000/250000 [02:08<06:19, 492.21sample/s, avg_loss=[0.119294], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  26%|██▌       | 64000/250000 [02:10<06:18, 491.82sample/s, avg_loss=[0.119294], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  26%|██▌       | 64000/250000 [02:10<06:18, 491.82sample/s, avg_loss=[0.119186], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  26%|██▌       | 65000/250000 [02:12<06:16, 491.70sample/s, avg_loss=[0.119186], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  26%|██▌       | 65000/250000 [02:12<06:16, 491.70sample/s, avg_loss=[0.118593], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  26%|██▋       | 66000/250000 [02:14<06:14, 491.78sample/s, avg_loss=[0.118593], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  26%|██▋       | 66000/250000 [02:14<06:14, 491.78sample/s, avg_loss=[0.117753], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  27%|██▋       | 67000/250000 [02:16<06:11, 492.01sample/s, avg_loss=[0.117753], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  27%|██▋       | 67000/250000 [02:16<06:11, 492.01sample/s, avg_loss=[0.117498], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  27%|██▋       | 68000/250000 [02:18<06:09, 492.22sample/s, avg_loss=[0.117498], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  27%|██▋       | 68000/250000 [02:18<06:09, 492.22sample/s, avg_loss=[0.117303], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  28%|██▊       | 69000/250000 [02:20<06:07, 492.46sample/s, avg_loss=[0.117303], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  28%|██▊       | 69000/250000 [02:20<06:07, 492.46sample/s, avg_loss=[0.11666], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  28%|██▊       | 70000/250000 [02:22<06:05, 492.00sample/s, avg_loss=[0.11666], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  28%|██▊       | 70000/250000 [02:22<06:05, 492.00sample/s, avg_loss=[0.116249], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  28%|██▊       | 71000/250000 [02:24<06:03, 492.03sample/s, avg_loss=[0.116249], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  28%|██▊       | 71000/250000 [02:24<06:03, 492.03sample/s, avg_loss=[0.116398], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  29%|██▉       | 72000/250000 [02:26<06:01, 492.16sample/s, avg_loss=[0.116398], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  29%|██▉       | 72000/250000 [02:26<06:01, 492.16sample/s, avg_loss=[0.115209], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  29%|██▉       | 73000/250000 [02:28<05:59, 492.16sample/s, avg_loss=[0.115209], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  29%|██▉       | 73000/250000 [02:28<05:59, 492.16sample/s, avg_loss=[0.114659], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  30%|██▉       | 74000/250000 [02:30<05:57, 492.29sample/s, avg_loss=[0.114659], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  30%|██▉       | 74000/250000 [02:30<05:57, 492.29sample/s, avg_loss=[0.113675], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  30%|███       | 75000/250000 [02:32<05:55, 491.91sample/s, avg_loss=[0.113675], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  30%|███       | 75000/250000 [02:32<05:55, 491.91sample/s, avg_loss=[0.113326], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  30%|███       | 76000/250000 [02:34<05:53, 492.08sample/s, avg_loss=[0.113326], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  30%|███       | 76000/250000 [02:34<05:53, 492.08sample/s, avg_loss=[0.111839], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  31%|███       | 77000/250000 [02:36<05:51, 492.36sample/s, avg_loss=[0.111839], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  31%|███       | 77000/250000 [02:36<05:51, 492.36sample/s, avg_loss=[0.110868], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  31%|███       | 78000/250000 [02:38<05:49, 492.14sample/s, avg_loss=[0.110868], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  31%|███       | 78000/250000 [02:38<05:49, 492.14sample/s, avg_loss=[0.110662], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  32%|███▏      | 79000/250000 [02:41<05:47, 491.57sample/s, avg_loss=[0.110662], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  32%|███▏      | 79000/250000 [02:41<05:47, 491.57sample/s, avg_loss=[0.109442], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  32%|███▏      | 80000/250000 [02:43<05:46, 490.59sample/s, avg_loss=[0.109442], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  32%|███▏      | 80000/250000 [02:43<05:46, 490.59sample/s, avg_loss=[0.108474], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  32%|███▏      | 81000/250000 [02:45<05:45, 489.82sample/s, avg_loss=[0.108474], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  32%|███▏      | 81000/250000 [02:45<05:45, 489.82sample/s, avg_loss=[0.107998], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  33%|███▎      | 82000/250000 [02:47<05:43, 489.78sample/s, avg_loss=[0.107998], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  33%|███▎      | 82000/250000 [02:47<05:43, 489.78sample/s, avg_loss=[0.107382], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  33%|███▎      | 83000/250000 [02:49<05:40, 490.65sample/s, avg_loss=[0.107382], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  33%|███▎      | 83000/250000 [02:49<05:40, 490.65sample/s, avg_loss=[0.10636], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  34%|███▎      | 84000/250000 [02:51<05:37, 491.23sample/s, avg_loss=[0.10636], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  34%|███▎      | 84000/250000 [02:51<05:37, 491.23sample/s, avg_loss=[0.106308], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  34%|███▍      | 85000/250000 [02:53<05:35, 491.59sample/s, avg_loss=[0.106308], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  34%|███▍      | 85000/250000 [02:53<05:35, 491.59sample/s, avg_loss=[0.10672], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  34%|███▍      | 86000/250000 [02:55<05:33, 491.85sample/s, avg_loss=[0.10672], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  34%|███▍      | 86000/250000 [02:55<05:33, 491.85sample/s, avg_loss=[0.104925], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  35%|███▍      | 87000/250000 [02:57<05:31, 492.14sample/s, avg_loss=[0.104925], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  35%|███▍      | 87000/250000 [02:57<05:31, 492.14sample/s, avg_loss=[0.104639], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  35%|███▌      | 88000/250000 [02:59<05:29, 492.23sample/s, avg_loss=[0.104639], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  35%|███▌      | 88000/250000 [02:59<05:29, 492.23sample/s, avg_loss=[0.104101], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  36%|███▌      | 89000/250000 [03:01<05:27, 492.28sample/s, avg_loss=[0.104101], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  36%|███▌      | 89000/250000 [03:01<05:27, 492.28sample/s, avg_loss=[0.1037], avg_pdf_loss=[0], lr=0.001]  [A
+Epoch Training Progress:  36%|███▌      | 90000/250000 [03:03<05:24, 492.41sample/s, avg_loss=[0.1037], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  36%|███▌      | 90000/250000 [03:03<05:24, 492.41sample/s, avg_loss=[0.103699], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  36%|███▋      | 91000/250000 [03:05<05:22, 492.48sample/s, avg_loss=[0.103699], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  36%|███▋      | 91000/250000 [03:05<05:22, 492.48sample/s, avg_loss=[0.102991], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  37%|███▋      | 92000/250000 [03:07<05:20, 492.48sample/s, avg_loss=[0.102991], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  37%|███▋      | 92000/250000 [03:07<05:20, 492.48sample/s, avg_loss=[0.102248], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  37%|███▋      | 93000/250000 [03:09<05:18, 492.47sample/s, avg_loss=[0.102248], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  37%|███▋      | 93000/250000 [03:09<05:18, 492.47sample/s, avg_loss=[0.101886], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  38%|███▊      | 94000/250000 [03:11<05:16, 492.46sample/s, avg_loss=[0.101886], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  38%|███▊      | 94000/250000 [03:11<05:16, 492.46sample/s, avg_loss=[0.10153], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  38%|███▊      | 95000/250000 [03:13<05:14, 492.52sample/s, avg_loss=[0.10153], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  38%|███▊      | 95000/250000 [03:13<05:14, 492.52sample/s, avg_loss=[0.101436], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  38%|███▊      | 96000/250000 [03:15<05:12, 492.58sample/s, avg_loss=[0.101436], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  38%|███▊      | 96000/250000 [03:15<05:12, 492.58sample/s, avg_loss=[0.100794], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  39%|███▉      | 97000/250000 [03:17<05:10, 492.60sample/s, avg_loss=[0.100794], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  39%|███▉      | 97000/250000 [03:17<05:10, 492.60sample/s, avg_loss=[0.100625], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  39%|███▉      | 98000/250000 [03:19<05:08, 492.54sample/s, avg_loss=[0.100625], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  39%|███▉      | 98000/250000 [03:19<05:08, 492.54sample/s, avg_loss=[0.100564], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  40%|███▉      | 99000/250000 [03:21<05:06, 492.78sample/s, avg_loss=[0.100564], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  40%|███▉      | 99000/250000 [03:21<05:06, 492.78sample/s, avg_loss=[0.0996215], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  40%|████      | 100000/250000 [03:23<05:04, 493.16sample/s, avg_loss=[0.0996215], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  40%|████      | 100000/250000 [03:23<05:04, 493.16sample/s, avg_loss=[0.0994097], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  40%|████      | 101000/250000 [03:25<05:02, 493.18sample/s, avg_loss=[0.0994097], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  40%|████      | 101000/250000 [03:25<05:02, 493.18sample/s, avg_loss=[0.0993672], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  41%|████      | 102000/250000 [03:27<04:59, 493.52sample/s, avg_loss=[0.0993672], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  41%|████      | 102000/250000 [03:27<04:59, 493.52sample/s, avg_loss=[0.0995807], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  41%|████      | 103000/250000 [03:29<04:57, 493.55sample/s, avg_loss=[0.0995807], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  41%|████      | 103000/250000 [03:29<04:57, 493.55sample/s, avg_loss=[0.0988656], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  42%|████▏     | 104000/250000 [03:31<04:55, 493.36sample/s, avg_loss=[0.0988656], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  42%|████▏     | 104000/250000 [03:31<04:55, 493.36sample/s, avg_loss=[0.0984126], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  42%|████▏     | 105000/250000 [03:33<04:54, 493.06sample/s, avg_loss=[0.0984126], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  42%|████▏     | 105000/250000 [03:33<04:54, 493.06sample/s, avg_loss=[0.0982691], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  42%|████▏     | 106000/250000 [03:35<04:52, 492.79sample/s, avg_loss=[0.0982691], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  42%|████▏     | 106000/250000 [03:35<04:52, 492.79sample/s, avg_loss=[0.0982353], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  43%|████▎     | 107000/250000 [03:37<04:50, 492.66sample/s, avg_loss=[0.0982353], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  43%|████▎     | 107000/250000 [03:37<04:50, 492.66sample/s, avg_loss=[0.0980065], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  43%|████▎     | 108000/250000 [03:39<04:48, 492.68sample/s, avg_loss=[0.0980065], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  43%|████▎     | 108000/250000 [03:39<04:48, 492.68sample/s, avg_loss=[0.0975559], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  44%|████▎     | 109000/250000 [03:41<04:46, 492.80sample/s, avg_loss=[0.0975559], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  44%|████▎     | 109000/250000 [03:41<04:46, 492.80sample/s, avg_loss=[0.0972321], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  44%|████▍     | 110000/250000 [03:43<04:44, 492.73sample/s, avg_loss=[0.0972321], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  44%|████▍     | 110000/250000 [03:43<04:44, 492.73sample/s, avg_loss=[0.0970647], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  44%|████▍     | 111000/250000 [03:46<04:42, 492.78sample/s, avg_loss=[0.0970647], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  44%|████▍     | 111000/250000 [03:46<04:42, 492.78sample/s, avg_loss=[0.0969403], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  45%|████▍     | 112000/250000 [03:48<04:40, 492.41sample/s, avg_loss=[0.0969403], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  45%|████▍     | 112000/250000 [03:48<04:40, 492.41sample/s, avg_loss=[0.0964934], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  45%|████▌     | 113000/250000 [03:50<04:38, 491.10sample/s, avg_loss=[0.0964934], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  45%|████▌     | 113000/250000 [03:50<04:38, 491.10sample/s, avg_loss=[0.0968594], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  46%|████▌     | 114000/250000 [03:52<04:37, 490.81sample/s, avg_loss=[0.0968594], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  46%|████▌     | 114000/250000 [03:52<04:37, 490.81sample/s, avg_loss=[0.0961772], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  46%|████▌     | 115000/250000 [03:54<04:34, 491.30sample/s, avg_loss=[0.0961772], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  46%|████▌     | 115000/250000 [03:54<04:34, 491.30sample/s, avg_loss=[0.096117], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  46%|████▋     | 116000/250000 [03:56<04:32, 491.65sample/s, avg_loss=[0.096117], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  46%|████▋     | 116000/250000 [03:56<04:32, 491.65sample/s, avg_loss=[0.0958482], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  47%|████▋     | 117000/250000 [03:58<04:30, 491.84sample/s, avg_loss=[0.0958482], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  47%|████▋     | 117000/250000 [03:58<04:30, 491.84sample/s, avg_loss=[0.0962067], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  47%|████▋     | 118000/250000 [04:00<04:28, 491.87sample/s, avg_loss=[0.0962067], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  47%|████▋     | 118000/250000 [04:00<04:28, 491.87sample/s, avg_loss=[0.0955449], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  48%|████▊     | 119000/250000 [04:02<04:26, 491.28sample/s, avg_loss=[0.0955449], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  48%|████▊     | 119000/250000 [04:02<04:26, 491.28sample/s, avg_loss=[0.0953895], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  48%|████▊     | 120000/250000 [04:04<04:25, 490.46sample/s, avg_loss=[0.0953895], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  48%|████▊     | 120000/250000 [04:04<04:25, 490.46sample/s, avg_loss=[0.0950895], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  48%|████▊     | 121000/250000 [04:06<04:22, 490.82sample/s, avg_loss=[0.0950895], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  48%|████▊     | 121000/250000 [04:06<04:22, 490.82sample/s, avg_loss=[0.0943335], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  49%|████▉     | 122000/250000 [04:08<04:20, 491.43sample/s, avg_loss=[0.0943335], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  49%|████▉     | 122000/250000 [04:08<04:20, 491.43sample/s, avg_loss=[0.0945435], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  49%|████▉     | 123000/250000 [04:10<04:18, 491.83sample/s, avg_loss=[0.0945435], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  49%|████▉     | 123000/250000 [04:10<04:18, 491.83sample/s, avg_loss=[0.0944519], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  50%|████▉     | 124000/250000 [04:12<04:16, 491.86sample/s, avg_loss=[0.0944519], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  50%|████▉     | 124000/250000 [04:12<04:16, 491.86sample/s, avg_loss=[0.0945286], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  50%|█████     | 125000/250000 [04:14<04:14, 490.70sample/s, avg_loss=[0.0945286], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  50%|█████     | 125000/250000 [04:14<04:14, 490.70sample/s, avg_loss=[0.0943878], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  50%|█████     | 126000/250000 [04:16<04:13, 489.79sample/s, avg_loss=[0.0943878], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  50%|█████     | 126000/250000 [04:16<04:13, 489.79sample/s, avg_loss=[0.0938312], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  51%|█████     | 127000/250000 [04:18<04:11, 489.76sample/s, avg_loss=[0.0938312], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  51%|█████     | 127000/250000 [04:18<04:11, 489.76sample/s, avg_loss=[0.093439], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  51%|█████     | 128000/250000 [04:20<04:08, 490.53sample/s, avg_loss=[0.093439], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  51%|█████     | 128000/250000 [04:20<04:08, 490.53sample/s, avg_loss=[0.0941054], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  52%|█████▏    | 129000/250000 [04:22<04:06, 491.22sample/s, avg_loss=[0.0941054], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  52%|█████▏    | 129000/250000 [04:22<04:06, 491.22sample/s, avg_loss=[0.0931005], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  52%|█████▏    | 130000/250000 [04:24<04:04, 491.65sample/s, avg_loss=[0.0931005], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  52%|█████▏    | 130000/250000 [04:24<04:04, 491.65sample/s, avg_loss=[0.0935193], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  52%|█████▏    | 131000/250000 [04:26<04:01, 492.02sample/s, avg_loss=[0.0935193], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  52%|█████▏    | 131000/250000 [04:26<04:01, 492.02sample/s, avg_loss=[0.093055], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  53%|█████▎    | 132000/250000 [04:28<03:59, 491.81sample/s, avg_loss=[0.093055], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  53%|█████▎    | 132000/250000 [04:28<03:59, 491.81sample/s, avg_loss=[0.0927159], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  53%|█████▎    | 133000/250000 [04:30<03:58, 490.85sample/s, avg_loss=[0.0927159], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  53%|█████▎    | 133000/250000 [04:30<03:58, 490.85sample/s, avg_loss=[0.0930872], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  54%|█████▎    | 134000/250000 [04:32<03:56, 490.27sample/s, avg_loss=[0.0930872], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  54%|█████▎    | 134000/250000 [04:32<03:56, 490.27sample/s, avg_loss=[0.0919586], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  54%|█████▍    | 135000/250000 [04:34<03:54, 490.75sample/s, avg_loss=[0.0919586], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  54%|█████▍    | 135000/250000 [04:34<03:54, 490.75sample/s, avg_loss=[0.092564], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  54%|█████▍    | 136000/250000 [04:36<03:52, 491.34sample/s, avg_loss=[0.092564], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  54%|█████▍    | 136000/250000 [04:36<03:52, 491.34sample/s, avg_loss=[0.0923449], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  55%|█████▍    | 137000/250000 [04:38<03:49, 491.60sample/s, avg_loss=[0.0923449], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  55%|█████▍    | 137000/250000 [04:38<03:49, 491.60sample/s, avg_loss=[0.0919057], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  55%|█████▌    | 138000/250000 [04:40<03:47, 491.89sample/s, avg_loss=[0.0919057], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  55%|█████▌    | 138000/250000 [04:40<03:47, 491.89sample/s, avg_loss=[0.0921692], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  56%|█████▌    | 139000/250000 [04:43<03:45, 492.20sample/s, avg_loss=[0.0921692], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  56%|█████▌    | 139000/250000 [04:43<03:45, 492.20sample/s, avg_loss=[0.0919715], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  56%|█████▌    | 140000/250000 [04:45<03:43, 492.46sample/s, avg_loss=[0.0919715], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  56%|█████▌    | 140000/250000 [04:45<03:43, 492.46sample/s, avg_loss=[0.0915093], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  56%|█████▋    | 141000/250000 [04:47<03:41, 492.30sample/s, avg_loss=[0.0915093], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  56%|█████▋    | 141000/250000 [04:47<03:41, 492.30sample/s, avg_loss=[0.0913341], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  57%|█████▋    | 142000/250000 [04:49<03:39, 492.22sample/s, avg_loss=[0.0913341], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  57%|█████▋    | 142000/250000 [04:49<03:39, 492.22sample/s, avg_loss=[0.0912059], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  57%|█████▋    | 143000/250000 [04:51<03:37, 492.38sample/s, avg_loss=[0.0912059], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  57%|█████▋    | 143000/250000 [04:51<03:37, 492.38sample/s, avg_loss=[0.0911654], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  58%|█████▊    | 144000/250000 [04:53<03:35, 492.37sample/s, avg_loss=[0.0911654], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  58%|█████▊    | 144000/250000 [04:53<03:35, 492.37sample/s, avg_loss=[0.0908974], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  58%|█████▊    | 145000/250000 [04:55<03:33, 492.44sample/s, avg_loss=[0.0908974], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  58%|█████▊    | 145000/250000 [04:55<03:33, 492.44sample/s, avg_loss=[0.0905083], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  58%|█████▊    | 146000/250000 [04:57<03:31, 492.56sample/s, avg_loss=[0.0905083], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  58%|█████▊    | 146000/250000 [04:57<03:31, 492.56sample/s, avg_loss=[0.0905679], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  59%|█████▉    | 147000/250000 [04:59<03:29, 492.67sample/s, avg_loss=[0.0905679], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  59%|█████▉    | 147000/250000 [04:59<03:29, 492.67sample/s, avg_loss=[0.0905088], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  59%|█████▉    | 148000/250000 [05:01<03:26, 492.79sample/s, avg_loss=[0.0905088], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  59%|█████▉    | 148000/250000 [05:01<03:26, 492.79sample/s, avg_loss=[0.0906911], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  60%|█████▉    | 149000/250000 [05:03<03:24, 492.82sample/s, avg_loss=[0.0906911], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  60%|█████▉    | 149000/250000 [05:03<03:24, 492.82sample/s, avg_loss=[0.0901785], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  60%|██████    | 150000/250000 [05:05<03:22, 492.76sample/s, avg_loss=[0.0901785], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  60%|██████    | 150000/250000 [05:05<03:22, 492.76sample/s, avg_loss=[0.0902937], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  60%|██████    | 151000/250000 [05:07<03:20, 492.64sample/s, avg_loss=[0.0902937], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  60%|██████    | 151000/250000 [05:07<03:20, 492.64sample/s, avg_loss=[0.0895778], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  61%|██████    | 152000/250000 [05:09<03:18, 492.57sample/s, avg_loss=[0.0895778], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  61%|██████    | 152000/250000 [05:09<03:18, 492.57sample/s, avg_loss=[0.0899471], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  61%|██████    | 153000/250000 [05:11<03:16, 492.54sample/s, avg_loss=[0.0899471], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  61%|██████    | 153000/250000 [05:11<03:16, 492.54sample/s, avg_loss=[0.0895035], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  62%|██████▏   | 154000/250000 [05:13<03:14, 492.48sample/s, avg_loss=[0.0895035], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  62%|██████▏   | 154000/250000 [05:13<03:14, 492.48sample/s, avg_loss=[0.0896357], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  62%|██████▏   | 155000/250000 [05:15<03:12, 492.42sample/s, avg_loss=[0.0896357], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  62%|██████▏   | 155000/250000 [05:15<03:12, 492.42sample/s, avg_loss=[0.0892058], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  62%|██████▏   | 156000/250000 [05:17<03:10, 492.37sample/s, avg_loss=[0.0892058], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  62%|██████▏   | 156000/250000 [05:17<03:10, 492.37sample/s, avg_loss=[0.0891972], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  63%|██████▎   | 157000/250000 [05:19<03:08, 492.42sample/s, avg_loss=[0.0891972], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  63%|██████▎   | 157000/250000 [05:19<03:08, 492.42sample/s, avg_loss=[0.0891265], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  63%|██████▎   | 158000/250000 [05:21<03:06, 492.31sample/s, avg_loss=[0.0891265], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  63%|██████▎   | 158000/250000 [05:21<03:06, 492.31sample/s, avg_loss=[0.0885684], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  64%|██████▎   | 159000/250000 [05:23<03:04, 492.07sample/s, avg_loss=[0.0885684], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  64%|██████▎   | 159000/250000 [05:23<03:04, 492.07sample/s, avg_loss=[0.0890171], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  64%|██████▍   | 160000/250000 [05:25<03:02, 492.24sample/s, avg_loss=[0.0890171], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  64%|██████▍   | 160000/250000 [05:25<03:02, 492.24sample/s, avg_loss=[0.0882757], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  64%|██████▍   | 161000/250000 [05:27<03:00, 492.22sample/s, avg_loss=[0.0882757], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  64%|██████▍   | 161000/250000 [05:27<03:00, 492.22sample/s, avg_loss=[0.0889044], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  65%|██████▍   | 162000/250000 [05:29<02:58, 492.31sample/s, avg_loss=[0.0889044], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  65%|██████▍   | 162000/250000 [05:29<02:58, 492.31sample/s, avg_loss=[0.0882292], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  65%|██████▌   | 163000/250000 [05:31<02:56, 492.45sample/s, avg_loss=[0.0882292], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  65%|██████▌   | 163000/250000 [05:31<02:56, 492.45sample/s, avg_loss=[0.0886375], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  66%|██████▌   | 164000/250000 [05:33<02:54, 492.47sample/s, avg_loss=[0.0886375], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  66%|██████▌   | 164000/250000 [05:33<02:54, 492.47sample/s, avg_loss=[0.0881383], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  66%|██████▌   | 165000/250000 [05:35<02:52, 492.38sample/s, avg_loss=[0.0881383], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  66%|██████▌   | 165000/250000 [05:35<02:52, 492.38sample/s, avg_loss=[0.088231], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  66%|██████▋   | 166000/250000 [05:37<02:50, 492.44sample/s, avg_loss=[0.088231], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  66%|██████▋   | 166000/250000 [05:37<02:50, 492.44sample/s, avg_loss=[0.0882572], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  67%|██████▋   | 167000/250000 [05:39<02:48, 492.45sample/s, avg_loss=[0.0882572], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  67%|██████▋   | 167000/250000 [05:39<02:48, 492.45sample/s, avg_loss=[0.0875426], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  67%|██████▋   | 168000/250000 [05:41<02:46, 492.48sample/s, avg_loss=[0.0875426], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  67%|██████▋   | 168000/250000 [05:41<02:46, 492.48sample/s, avg_loss=[0.0876279], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  68%|██████▊   | 169000/250000 [05:43<02:44, 492.48sample/s, avg_loss=[0.0876279], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  68%|██████▊   | 169000/250000 [05:43<02:44, 492.48sample/s, avg_loss=[0.0879883], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  68%|██████▊   | 170000/250000 [05:45<02:42, 492.45sample/s, avg_loss=[0.0879883], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  68%|██████▊   | 170000/250000 [05:45<02:42, 492.45sample/s, avg_loss=[0.0873375], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  68%|██████▊   | 171000/250000 [05:48<02:40, 492.44sample/s, avg_loss=[0.0873375], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  68%|██████▊   | 171000/250000 [05:48<02:40, 492.44sample/s, avg_loss=[0.0875086], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  69%|██████▉   | 172000/250000 [05:50<02:38, 492.46sample/s, avg_loss=[0.0875086], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  69%|██████▉   | 172000/250000 [05:50<02:38, 492.46sample/s, avg_loss=[0.0877909], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  69%|██████▉   | 173000/250000 [05:52<02:36, 492.48sample/s, avg_loss=[0.0877909], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  69%|██████▉   | 173000/250000 [05:52<02:36, 492.48sample/s, avg_loss=[0.0864744], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  70%|██████▉   | 174000/250000 [05:54<02:34, 492.46sample/s, avg_loss=[0.0864744], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  70%|██████▉   | 174000/250000 [05:54<02:34, 492.46sample/s, avg_loss=[0.087364], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  70%|███████   | 175000/250000 [05:56<02:32, 492.43sample/s, avg_loss=[0.087364], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  70%|███████   | 175000/250000 [05:56<02:32, 492.43sample/s, avg_loss=[0.0868902], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  70%|███████   | 176000/250000 [05:58<02:30, 492.40sample/s, avg_loss=[0.0868902], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  70%|███████   | 176000/250000 [05:58<02:30, 492.40sample/s, avg_loss=[0.0868938], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  71%|███████   | 177000/250000 [06:00<02:28, 492.37sample/s, avg_loss=[0.0868938], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  71%|███████   | 177000/250000 [06:00<02:28, 492.37sample/s, avg_loss=[0.0865398], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  71%|███████   | 178000/250000 [06:02<02:26, 491.59sample/s, avg_loss=[0.0865398], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  71%|███████   | 178000/250000 [06:02<02:26, 491.59sample/s, avg_loss=[0.0866504], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  72%|███████▏  | 179000/250000 [06:04<02:24, 490.64sample/s, avg_loss=[0.0866504], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  72%|███████▏  | 179000/250000 [06:04<02:24, 490.64sample/s, avg_loss=[0.0866807], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  72%|███████▏  | 180000/250000 [06:06<02:22, 491.02sample/s, avg_loss=[0.0866807], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  72%|███████▏  | 180000/250000 [06:06<02:22, 491.02sample/s, avg_loss=[0.0865007], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  72%|███████▏  | 181000/250000 [06:08<02:20, 491.23sample/s, avg_loss=[0.0865007], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  72%|███████▏  | 181000/250000 [06:08<02:20, 491.23sample/s, avg_loss=[0.085974], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  73%|███████▎  | 182000/250000 [06:10<02:18, 491.31sample/s, avg_loss=[0.085974], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  73%|███████▎  | 182000/250000 [06:10<02:18, 491.31sample/s, avg_loss=[0.0858132], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  73%|███████▎  | 183000/250000 [06:12<02:16, 491.60sample/s, avg_loss=[0.0858132], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  73%|███████▎  | 183000/250000 [06:12<02:16, 491.60sample/s, avg_loss=[0.0863795], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  74%|███████▎  | 184000/250000 [06:14<02:14, 491.71sample/s, avg_loss=[0.0863795], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  74%|███████▎  | 184000/250000 [06:14<02:14, 491.71sample/s, avg_loss=[0.0860655], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  74%|███████▍  | 185000/250000 [06:16<02:12, 491.98sample/s, avg_loss=[0.0860655], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  74%|███████▍  | 185000/250000 [06:16<02:12, 491.98sample/s, avg_loss=[0.0861746], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  74%|███████▍  | 186000/250000 [06:18<02:10, 492.20sample/s, avg_loss=[0.0861746], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  74%|███████▍  | 186000/250000 [06:18<02:10, 492.20sample/s, avg_loss=[0.0860124], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  75%|███████▍  | 187000/250000 [06:20<02:07, 492.32sample/s, avg_loss=[0.0860124], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  75%|███████▍  | 187000/250000 [06:20<02:07, 492.32sample/s, avg_loss=[0.0856882], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  75%|███████▌  | 188000/250000 [06:22<02:05, 492.38sample/s, avg_loss=[0.0856882], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  75%|███████▌  | 188000/250000 [06:22<02:05, 492.38sample/s, avg_loss=[0.0863134], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  76%|███████▌  | 189000/250000 [06:24<02:03, 492.43sample/s, avg_loss=[0.0863134], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  76%|███████▌  | 189000/250000 [06:24<02:03, 492.43sample/s, avg_loss=[0.0853469], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  76%|███████▌  | 190000/250000 [06:26<02:01, 492.48sample/s, avg_loss=[0.0853469], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  76%|███████▌  | 190000/250000 [06:26<02:01, 492.48sample/s, avg_loss=[0.0854903], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  76%|███████▋  | 191000/250000 [06:28<01:59, 492.47sample/s, avg_loss=[0.0854903], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  76%|███████▋  | 191000/250000 [06:28<01:59, 492.47sample/s, avg_loss=[0.0852703], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  77%|███████▋  | 192000/250000 [06:30<01:57, 491.81sample/s, avg_loss=[0.0852703], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  77%|███████▋  | 192000/250000 [06:30<01:57, 491.81sample/s, avg_loss=[0.0851515], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  77%|███████▋  | 193000/250000 [06:32<01:55, 492.05sample/s, avg_loss=[0.0851515], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  77%|███████▋  | 193000/250000 [06:32<01:55, 492.05sample/s, avg_loss=[0.085096], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  78%|███████▊  | 194000/250000 [06:34<01:53, 492.16sample/s, avg_loss=[0.085096], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  78%|███████▊  | 194000/250000 [06:34<01:53, 492.16sample/s, avg_loss=[0.0852558], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  78%|███████▊  | 195000/250000 [06:36<01:51, 492.38sample/s, avg_loss=[0.0852558], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  78%|███████▊  | 195000/250000 [06:36<01:51, 492.38sample/s, avg_loss=[0.0855358], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  78%|███████▊  | 196000/250000 [06:38<01:49, 492.57sample/s, avg_loss=[0.0855358], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  78%|███████▊  | 196000/250000 [06:38<01:49, 492.57sample/s, avg_loss=[0.0849684], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  79%|███████▉  | 197000/250000 [06:40<01:47, 492.62sample/s, avg_loss=[0.0849684], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  79%|███████▉  | 197000/250000 [06:40<01:47, 492.62sample/s, avg_loss=[0.0848713], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  79%|███████▉  | 198000/250000 [06:42<01:45, 492.54sample/s, avg_loss=[0.0848713], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  79%|███████▉  | 198000/250000 [06:42<01:45, 492.54sample/s, avg_loss=[0.0847114], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  80%|███████▉  | 199000/250000 [06:44<01:43, 492.10sample/s, avg_loss=[0.0847114], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  80%|███████▉  | 199000/250000 [06:44<01:43, 492.10sample/s, avg_loss=[0.084878], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  80%|████████  | 200000/250000 [06:46<01:41, 492.30sample/s, avg_loss=[0.084878], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  80%|████████  | 200000/250000 [06:46<01:41, 492.30sample/s, avg_loss=[0.0844075], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  80%|████████  | 201000/250000 [06:48<01:39, 492.44sample/s, avg_loss=[0.0844075], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  80%|████████  | 201000/250000 [06:48<01:39, 492.44sample/s, avg_loss=[0.0845191], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  81%|████████  | 202000/250000 [06:50<01:37, 492.54sample/s, avg_loss=[0.0845191], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  81%|████████  | 202000/250000 [06:50<01:37, 492.54sample/s, avg_loss=[0.0842312], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  81%|████████  | 203000/250000 [06:53<01:35, 491.98sample/s, avg_loss=[0.0842312], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  81%|████████  | 203000/250000 [06:53<01:35, 491.98sample/s, avg_loss=[0.0844947], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  82%|████████▏ | 204000/250000 [06:55<01:33, 491.17sample/s, avg_loss=[0.0844947], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  82%|████████▏ | 204000/250000 [06:55<01:33, 491.17sample/s, avg_loss=[0.0845195], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  82%|████████▏ | 205000/250000 [06:57<01:31, 490.81sample/s, avg_loss=[0.0845195], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  82%|████████▏ | 205000/250000 [06:57<01:31, 490.81sample/s, avg_loss=[0.0840463], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  82%|████████▏ | 206000/250000 [06:59<01:29, 491.41sample/s, avg_loss=[0.0840463], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  82%|████████▏ | 206000/250000 [06:59<01:29, 491.41sample/s, avg_loss=[0.083997], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  83%|████████▎ | 207000/250000 [07:01<01:27, 491.86sample/s, avg_loss=[0.083997], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  83%|████████▎ | 207000/250000 [07:01<01:27, 491.86sample/s, avg_loss=[0.0841793], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  83%|████████▎ | 208000/250000 [07:03<01:25, 492.14sample/s, avg_loss=[0.0841793], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  83%|████████▎ | 208000/250000 [07:03<01:25, 492.14sample/s, avg_loss=[0.0839118], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  84%|████████▎ | 209000/250000 [07:05<01:23, 492.22sample/s, avg_loss=[0.0839118], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  84%|████████▎ | 209000/250000 [07:05<01:23, 492.22sample/s, avg_loss=[0.0839829], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  84%|████████▍ | 210000/250000 [07:07<01:21, 492.37sample/s, avg_loss=[0.0839829], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  84%|████████▍ | 210000/250000 [07:07<01:21, 492.37sample/s, avg_loss=[0.0841873], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  84%|████████▍ | 211000/250000 [07:09<01:19, 492.38sample/s, avg_loss=[0.0841873], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  84%|████████▍ | 211000/250000 [07:09<01:19, 492.38sample/s, avg_loss=[0.0838175], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  85%|████████▍ | 212000/250000 [07:11<01:17, 492.41sample/s, avg_loss=[0.0838175], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  85%|████████▍ | 212000/250000 [07:11<01:17, 492.41sample/s, avg_loss=[0.0838753], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  85%|████████▌ | 213000/250000 [07:13<01:15, 491.64sample/s, avg_loss=[0.0838753], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  85%|████████▌ | 213000/250000 [07:13<01:15, 491.64sample/s, avg_loss=[0.0836392], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  86%|████████▌ | 214000/250000 [07:15<01:13, 491.74sample/s, avg_loss=[0.0836392], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  86%|████████▌ | 214000/250000 [07:15<01:13, 491.74sample/s, avg_loss=[0.0835064], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  86%|████████▌ | 215000/250000 [07:17<01:11, 492.06sample/s, avg_loss=[0.0835064], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  86%|████████▌ | 215000/250000 [07:17<01:11, 492.06sample/s, avg_loss=[0.0836834], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  86%|████████▋ | 216000/250000 [07:19<01:09, 492.07sample/s, avg_loss=[0.0836834], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  86%|████████▋ | 216000/250000 [07:19<01:09, 492.07sample/s, avg_loss=[0.0832531], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  87%|████████▋ | 217000/250000 [07:21<01:07, 491.83sample/s, avg_loss=[0.0832531], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  87%|████████▋ | 217000/250000 [07:21<01:07, 491.83sample/s, avg_loss=[0.0834124], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  87%|████████▋ | 218000/250000 [07:23<01:05, 491.23sample/s, avg_loss=[0.0834124], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  87%|████████▋ | 218000/250000 [07:23<01:05, 491.23sample/s, avg_loss=[0.0834525], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  88%|████████▊ | 219000/250000 [07:25<01:03, 491.66sample/s, avg_loss=[0.0834525], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  88%|████████▊ | 219000/250000 [07:25<01:03, 491.66sample/s, avg_loss=[0.0832099], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  88%|████████▊ | 220000/250000 [07:27<01:01, 490.89sample/s, avg_loss=[0.0832099], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  88%|████████▊ | 220000/250000 [07:27<01:01, 490.89sample/s, avg_loss=[0.0829978], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  88%|████████▊ | 221000/250000 [07:29<00:59, 491.27sample/s, avg_loss=[0.0829978], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  88%|████████▊ | 221000/250000 [07:29<00:59, 491.27sample/s, avg_loss=[0.0829434], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  89%|████████▉ | 222000/250000 [07:31<00:56, 491.52sample/s, avg_loss=[0.0829434], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  89%|████████▉ | 222000/250000 [07:31<00:56, 491.52sample/s, avg_loss=[0.0827921], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  89%|████████▉ | 223000/250000 [07:33<00:54, 491.98sample/s, avg_loss=[0.0827921], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  89%|████████▉ | 223000/250000 [07:33<00:54, 491.98sample/s, avg_loss=[0.0828417], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  90%|████████▉ | 224000/250000 [07:35<00:52, 492.37sample/s, avg_loss=[0.0828417], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  90%|████████▉ | 224000/250000 [07:35<00:52, 492.37sample/s, avg_loss=[0.0826058], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  90%|█████████ | 225000/250000 [07:37<00:50, 492.39sample/s, avg_loss=[0.0826058], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  90%|█████████ | 225000/250000 [07:37<00:50, 492.39sample/s, avg_loss=[0.0829368], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  90%|█████████ | 226000/250000 [07:39<00:48, 492.42sample/s, avg_loss=[0.0829368], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  90%|█████████ | 226000/250000 [07:39<00:48, 492.42sample/s, avg_loss=[0.082226], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  91%|█████████ | 227000/250000 [07:41<00:46, 492.42sample/s, avg_loss=[0.082226], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  91%|█████████ | 227000/250000 [07:41<00:46, 492.42sample/s, avg_loss=[0.0825013], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  91%|█████████ | 228000/250000 [07:43<00:44, 492.46sample/s, avg_loss=[0.0825013], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  91%|█████████ | 228000/250000 [07:43<00:44, 492.46sample/s, avg_loss=[0.0824264], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  92%|█████████▏| 229000/250000 [07:45<00:42, 492.52sample/s, avg_loss=[0.0824264], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  92%|█████████▏| 229000/250000 [07:45<00:42, 492.52sample/s, avg_loss=[0.0823604], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  92%|█████████▏| 230000/250000 [07:47<00:40, 492.52sample/s, avg_loss=[0.0823604], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  92%|█████████▏| 230000/250000 [07:47<00:40, 492.52sample/s, avg_loss=[0.0821599], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  92%|█████████▏| 231000/250000 [07:49<00:38, 492.57sample/s, avg_loss=[0.0821599], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  92%|█████████▏| 231000/250000 [07:49<00:38, 492.57sample/s, avg_loss=[0.0817727], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  93%|█████████▎| 232000/250000 [07:51<00:36, 492.60sample/s, avg_loss=[0.0817727], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  93%|█████████▎| 232000/250000 [07:51<00:36, 492.60sample/s, avg_loss=[0.0819243], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  93%|█████████▎| 233000/250000 [07:54<00:34, 492.43sample/s, avg_loss=[0.0819243], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  93%|█████████▎| 233000/250000 [07:54<00:34, 492.43sample/s, avg_loss=[0.0820003], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  94%|█████████▎| 234000/250000 [07:56<00:32, 492.48sample/s, avg_loss=[0.0820003], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  94%|█████████▎| 234000/250000 [07:56<00:32, 492.48sample/s, avg_loss=[0.0818578], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  94%|█████████▍| 235000/250000 [07:58<00:30, 492.47sample/s, avg_loss=[0.0818578], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  94%|█████████▍| 235000/250000 [07:58<00:30, 492.47sample/s, avg_loss=[0.0815396], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  94%|█████████▍| 236000/250000 [08:00<00:28, 492.57sample/s, avg_loss=[0.0815396], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  94%|█████████▍| 236000/250000 [08:00<00:28, 492.57sample/s, avg_loss=[0.0820237], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  95%|█████████▍| 237000/250000 [08:02<00:26, 492.52sample/s, avg_loss=[0.0820237], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  95%|█████████▍| 237000/250000 [08:02<00:26, 492.52sample/s, avg_loss=[0.0816236], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  95%|█████████▌| 238000/250000 [08:04<00:24, 492.30sample/s, avg_loss=[0.0816236], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  95%|█████████▌| 238000/250000 [08:04<00:24, 492.30sample/s, avg_loss=[0.0821168], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  96%|█████████▌| 239000/250000 [08:06<00:22, 492.30sample/s, avg_loss=[0.0821168], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  96%|█████████▌| 239000/250000 [08:06<00:22, 492.30sample/s, avg_loss=[0.081311], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  96%|█████████▌| 240000/250000 [08:08<00:20, 492.32sample/s, avg_loss=[0.081311], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  96%|█████████▌| 240000/250000 [08:08<00:20, 492.32sample/s, avg_loss=[0.0812894], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  96%|█████████▋| 241000/250000 [08:10<00:18, 492.45sample/s, avg_loss=[0.0812894], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  96%|█████████▋| 241000/250000 [08:10<00:18, 492.45sample/s, avg_loss=[0.0813701], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  97%|█████████▋| 242000/250000 [08:12<00:16, 492.45sample/s, avg_loss=[0.0813701], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  97%|█████████▋| 242000/250000 [08:12<00:16, 492.45sample/s, avg_loss=[0.0810948], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  97%|█████████▋| 243000/250000 [08:14<00:14, 492.61sample/s, avg_loss=[0.0810948], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  97%|█████████▋| 243000/250000 [08:14<00:14, 492.61sample/s, avg_loss=[0.081098], avg_pdf_loss=[0], lr=0.001] [A
+Epoch Training Progress:  98%|█████████▊| 244000/250000 [08:16<00:12, 492.59sample/s, avg_loss=[0.081098], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  98%|█████████▊| 244000/250000 [08:16<00:12, 492.59sample/s, avg_loss=[0.0813308], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  98%|█████████▊| 245000/250000 [08:18<00:10, 492.50sample/s, avg_loss=[0.0813308], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  98%|█████████▊| 245000/250000 [08:18<00:10, 492.50sample/s, avg_loss=[0.0814987], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  98%|█████████▊| 246000/250000 [08:20<00:08, 492.36sample/s, avg_loss=[0.0814987], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  98%|█████████▊| 246000/250000 [08:20<00:08, 492.36sample/s, avg_loss=[0.0808415], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  99%|█████████▉| 247000/250000 [08:22<00:06, 491.25sample/s, avg_loss=[0.0808415], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  99%|█████████▉| 247000/250000 [08:22<00:06, 491.25sample/s, avg_loss=[0.0807671], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  99%|█████████▉| 248000/250000 [08:24<00:04, 491.63sample/s, avg_loss=[0.0807671], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress:  99%|█████████▉| 248000/250000 [08:24<00:04, 491.63sample/s, avg_loss=[0.0811678], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress: 100%|█████████▉| 249000/250000 [08:26<00:02, 491.97sample/s, avg_loss=[0.0811678], avg_pdf_loss=[0], lr=0.001][A
+Epoch Training Progress: 100%|█████████▉| 249000/250000 [08:26<00:02, 491.97sample/s, avg_loss=[0.0807748], avg_pdf_loss=[0], lr=0.001][AEpoch Training Progress: 100%|█████████▉| 249000/250000 [08:28<00:02, 489.63sample/s, avg_loss=[0.0807748], avg_pdf_loss=[0], lr=0.001]
+
+using: decoder: True encoder: True shading frame: False importance sampling: False texture: False 
+
+Rendering Progress:   0%|          | 0/128 [00:00<?, ?pass/s]Rendering Progress:   1%|          | 1/128 [00:01<03:11,  1.51s/pass]Rendering Progress:   2%|▏         | 2/128 [00:02<02:28,  1.18s/pass]Rendering Progress:   2%|▏         | 3/128 [00:03<02:00,  1.04pass/s]Rendering Progress:   3%|▎         | 4/128 [00:04<01:56,  1.06pass/s]Rendering Progress:   4%|▍         | 5/128 [00:04<01:43,  1.18pass/s]Rendering Progress:   5%|▍         | 6/128 [00:05<01:35,  1.28pass/s]Rendering Progress:   5%|▌         | 7/128 [00:06<01:32,  1.31pass/s]Rendering Progress:   6%|▋         | 8/128 [00:07<01:42,  1.17pass/s]Rendering Progress:   7%|▋         | 9/128 [00:07<01:34,  1.25pass/s]Rendering Progress:   8%|▊         | 10/128 [00:08<01:32,  1.27pass/s]Rendering Progress:   9%|▊         | 11/128 [00:09<01:44,  1.12pass/s]Rendering Progress:   9%|▉         | 12/128 [00:10<01:40,  1.16pass/s]Rendering Progress:  10%|█         | 13/128 [00:11<01:46,  1.08pass/s]Rendering Progress:  11%|█         | 14/128 [00:12<01:32,  1.23pass/s]Rendering Progress:  12%|█▏        | 15/128 [00:12<01:26,  1.31pass/s]Rendering Progress:  12%|█▎        | 16/128 [00:13<01:17,  1.44pass/s]Rendering Progress:  13%|█▎        | 17/128 [00:14<01:20,  1.37pass/s]Rendering Progress:  14%|█▍        | 18/128 [00:14<01:22,  1.34pass/s]Rendering Progress:  15%|█▍        | 19/128 [00:16<01:31,  1.19pass/s]Rendering Progress:  16%|█▌        | 20/128 [00:16<01:28,  1.22pass/s]Rendering Progress:  16%|█▋        | 21/128 [00:17<01:19,  1.34pass/s]Rendering Progress:  17%|█▋        | 22/128 [00:18<01:21,  1.30pass/s]Rendering Progress:  18%|█▊        | 23/128 [00:19<01:24,  1.25pass/s]Rendering Progress:  19%|█▉        | 24/128 [00:19<01:25,  1.22pass/s]Rendering Progress:  20%|█▉        | 25/128 [00:20<01:25,  1.20pass/s]Rendering Progress:  20%|██        | 26/128 [00:21<01:19,  1.28pass/s]Rendering Progress:  21%|██        | 27/128 [00:21<01:11,  1.41pass/s]Rendering Progress:  22%|██▏       | 28/128 [00:23<01:21,  1.23pass/s]Rendering Progress:  23%|██▎       | 29/128 [00:23<01:22,  1.20pass/s]Rendering Progress:  23%|██▎       | 30/128 [00:24<01:17,  1.26pass/s]Rendering Progress:  24%|██▍       | 31/128 [00:25<01:26,  1.13pass/s]Rendering Progress:  25%|██▌       | 32/128 [00:26<01:20,  1.20pass/s]Rendering Progress:  26%|██▌       | 33/128 [00:27<01:12,  1.31pass/s]Rendering Progress:  27%|██▋       | 34/128 [00:27<01:08,  1.37pass/s]Rendering Progress:  27%|██▋       | 35/128 [00:28<01:09,  1.34pass/s]Rendering Progress:  28%|██▊       | 36/128 [00:29<01:14,  1.23pass/s]Rendering Progress:  29%|██▉       | 37/128 [00:30<01:22,  1.11pass/s]Rendering Progress:  30%|██▉       | 38/128 [00:31<01:17,  1.15pass/s]Rendering Progress:  30%|███       | 39/128 [00:32<01:23,  1.07pass/s]Rendering Progress:  31%|███▏      | 40/128 [00:33<01:16,  1.15pass/s]Rendering Progress:  32%|███▏      | 41/128 [00:33<01:12,  1.20pass/s]Rendering Progress:  33%|███▎      | 42/128 [00:34<01:09,  1.24pass/s]Rendering Progress:  34%|███▎      | 43/128 [00:35<01:04,  1.31pass/s]Rendering Progress:  34%|███▍      | 44/128 [00:36<01:08,  1.22pass/s]Rendering Progress:  35%|███▌      | 45/128 [00:37<01:09,  1.19pass/s]Rendering Progress:  36%|███▌      | 46/128 [00:37<01:01,  1.32pass/s]Rendering Progress:  37%|███▋      | 47/128 [00:38<00:59,  1.36pass/s]Rendering Progress:  38%|███▊      | 48/128 [00:39<00:57,  1.40pass/s]Rendering Progress:  38%|███▊      | 49/128 [00:39<00:58,  1.34pass/s]Rendering Progress:  39%|███▉      | 50/128 [00:40<00:59,  1.32pass/s]Rendering Progress:  40%|███▉      | 51/128 [00:41<00:57,  1.35pass/s]Rendering Progress:  41%|████      | 52/128 [00:42<00:57,  1.32pass/s]Rendering Progress:  41%|████▏     | 53/128 [00:42<00:55,  1.36pass/s]Rendering Progress:  42%|████▏     | 54/128 [00:43<00:51,  1.42pass/s]Rendering Progress:  43%|████▎     | 55/128 [00:43<00:46,  1.56pass/s]Rendering Progress:  44%|████▍     | 56/128 [00:44<00:50,  1.42pass/s]Rendering Progress:  45%|████▍     | 57/128 [00:45<00:49,  1.43pass/s]Rendering Progress:  45%|████▌     | 58/128 [00:46<00:48,  1.44pass/s]Rendering Progress:  46%|████▌     | 59/128 [00:46<00:45,  1.52pass/s]Rendering Progress:  47%|████▋     | 60/128 [00:47<00:47,  1.42pass/s]Rendering Progress:  48%|████▊     | 61/128 [00:48<00:49,  1.35pass/s]Rendering Progress:  48%|████▊     | 62/128 [00:49<00:47,  1.40pass/s]Rendering Progress:  49%|████▉     | 63/128 [00:49<00:42,  1.53pass/s]Rendering Progress:  50%|█████     | 64/128 [00:50<00:41,  1.53pass/s]Rendering Progress:  51%|█████     | 65/128 [00:50<00:40,  1.55pass/s]Rendering Progress:  52%|█████▏    | 66/128 [00:51<00:41,  1.48pass/s]Rendering Progress:  52%|█████▏    | 67/128 [00:52<00:46,  1.30pass/s]Rendering Progress:  53%|█████▎    | 68/128 [00:53<00:44,  1.34pass/s]Rendering Progress:  54%|█████▍    | 69/128 [00:54<00:46,  1.27pass/s]Rendering Progress:  55%|█████▍    | 70/128 [00:55<00:48,  1.21pass/s]Rendering Progress:  55%|█████▌    | 71/128 [00:55<00:46,  1.24pass/s]Rendering Progress:  56%|█████▋    | 72/128 [00:56<00:41,  1.34pass/s]Rendering Progress:  57%|█████▋    | 73/128 [00:57<00:39,  1.40pass/s]Rendering Progress:  58%|█████▊    | 74/128 [00:57<00:38,  1.40pass/s]Rendering Progress:  59%|█████▊    | 75/128 [00:58<00:41,  1.29pass/s]Rendering Progress:  59%|█████▉    | 76/128 [00:59<00:35,  1.46pass/s]Rendering Progress:  60%|██████    | 77/128 [00:59<00:34,  1.48pass/s]Rendering Progress:  61%|██████    | 78/128 [01:00<00:35,  1.42pass/s]Rendering Progress:  62%|██████▏   | 79/128 [01:01<00:35,  1.40pass/s]Rendering Progress:  62%|██████▎   | 80/128 [01:01<00:32,  1.49pass/s]Rendering Progress:  63%|██████▎   | 81/128 [01:02<00:31,  1.47pass/s]Rendering Progress:  64%|██████▍   | 82/128 [01:03<00:34,  1.34pass/s]Rendering Progress:  65%|██████▍   | 83/128 [01:04<00:38,  1.17pass/s]Rendering Progress:  66%|██████▌   | 84/128 [01:05<00:37,  1.19pass/s]Rendering Progress:  66%|██████▋   | 85/128 [01:06<00:33,  1.27pass/s]Rendering Progress:  67%|██████▋   | 86/128 [01:06<00:30,  1.39pass/s]Rendering Progress:  68%|██████▊   | 87/128 [01:07<00:32,  1.25pass/s]Rendering Progress:  69%|██████▉   | 88/128 [01:08<00:30,  1.32pass/s]Rendering Progress:  70%|██████▉   | 89/128 [01:09<00:29,  1.34pass/s]Rendering Progress:  70%|███████   | 90/128 [01:09<00:25,  1.48pass/s]Rendering Progress:  71%|███████   | 91/128 [01:10<00:26,  1.42pass/s]Rendering Progress:  72%|███████▏  | 92/128 [01:11<00:26,  1.34pass/s]Rendering Progress:  73%|███████▎  | 93/128 [01:11<00:25,  1.37pass/s]Rendering Progress:  73%|███████▎  | 94/128 [01:12<00:27,  1.24pass/s]Rendering Progress:  74%|███████▍  | 95/128 [01:13<00:24,  1.36pass/s]Rendering Progress:  75%|███████▌  | 96/128 [01:13<00:21,  1.46pass/s]Rendering Progress:  76%|███████▌  | 97/128 [01:14<00:22,  1.37pass/s]Rendering Progress:  77%|███████▋  | 98/128 [01:15<00:23,  1.26pass/s]Rendering Progress:  77%|███████▋  | 99/128 [01:16<00:21,  1.36pass/s]Rendering Progress:  78%|███████▊  | 100/128 [01:17<00:21,  1.33pass/s]Rendering Progress:  79%|███████▉  | 101/128 [01:17<00:20,  1.32pass/s]Rendering Progress:  80%|███████▉  | 102/128 [01:18<00:18,  1.44pass/s]Rendering Progress:  80%|████████  | 103/128 [01:18<00:15,  1.61pass/s]Rendering Progress:  81%|████████▏ | 104/128 [01:19<00:14,  1.63pass/s]Rendering Progress:  82%|████████▏ | 105/128 [01:20<00:15,  1.50pass/s]Rendering Progress:  83%|████████▎ | 106/128 [01:21<00:16,  1.36pass/s]Rendering Progress:  84%|████████▎ | 107/128 [01:22<00:16,  1.25pass/s]Rendering Progress:  84%|████████▍ | 108/128 [01:22<00:15,  1.27pass/s]Rendering Progress:  85%|████████▌ | 109/128 [01:23<00:14,  1.35pass/s]Rendering Progress:  86%|████████▌ | 110/128 [01:24<00:12,  1.41pass/s]Rendering Progress:  87%|████████▋ | 111/128 [01:25<00:13,  1.31pass/s]Rendering Progress:  88%|████████▊ | 112/128 [01:25<00:11,  1.45pass/s]Rendering Progress:  88%|████████▊ | 113/128 [01:25<00:08,  1.80pass/s]Rendering Progress:  89%|████████▉ | 114/128 [01:26<00:08,  1.64pass/s]Rendering Progress:  90%|████████▉ | 115/128 [01:27<00:08,  1.57pass/s]Rendering Progress:  91%|█████████ | 116/128 [01:27<00:07,  1.65pass/s]Rendering Progress:  91%|█████████▏| 117/128 [01:28<00:06,  1.73pass/s]Rendering Progress:  92%|█████████▏| 118/128 [01:28<00:06,  1.67pass/s]Rendering Progress:  93%|█████████▎| 119/128 [01:29<00:05,  1.57pass/s]Rendering Progress:  94%|█████████▍| 120/128 [01:30<00:05,  1.50pass/s]Rendering Progress:  95%|█████████▍| 121/128 [01:31<00:04,  1.43pass/s]Rendering Progress:  95%|█████████▌| 122/128 [01:31<00:04,  1.44pass/s]Rendering Progress:  96%|█████████▌| 123/128 [01:32<00:03,  1.47pass/s]Rendering Progress:  97%|█████████▋| 124/128 [01:33<00:02,  1.39pass/s]Rendering Progress:  98%|█████████▊| 125/128 [01:33<00:02,  1.43pass/s]Rendering Progress:  98%|█████████▊| 126/128 [01:34<00:01,  1.75pass/s]Rendering Progress:  99%|█████████▉| 127/128 [01:34<00:00,  1.87pass/s]Rendering Progress:  99%|█████████▉| 127/128 [01:34<00:00,  1.34pass/s]
+Neural BSDF loaded.
+test 123
