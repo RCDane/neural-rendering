@@ -1,4 +1,5 @@
 import os
+import time
 import mitsuba as mi
 import numpy as np
 import drjit as dr
@@ -732,12 +733,34 @@ def parse_arguments():
     parser.add_argument('--use_importance_sampling', action='store_true', help='Whether to use the importance sampling network.')
     parser.add_argument('--use_texture', action='store_true', help='Whether to use the latent texture.')
     parser.add_argument('--render_samples', type=int, default=1024, help='Number of samples to use when rendering test images.')
+    parser.add_argument('--benchmark', action='store_true', help='Whether to benchmark rendering.')
     args = parser.parse_args()
     
     return args
 
 
+def benchmark(scene : mi.Scene, expected_samples: int):
+    dr.set_flag(dr.JitFlag.SymbolicCalls, False)
+    dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+    dr.set_flag(dr.JitFlag.SymbolicLoops, False)
+    
+    
+    
+    
 
+    integrator = mi.load_dict({
+        'type': 'path',
+    })
+    # time rendering
+    start_time = time.time()
+    image = mi.render(scene, spp=expected_samples,integrator=integrator, seed=np.random.randint(0, 10000)) 
+    end_time = time.time()
+    render_time = end_time - start_time
+    
+    # dr.set_flag(dr.JitFlag.SymbolicCalls, True)
+    # dr.set_flag(dr.JitFlag.SymbolicConditionals, True)
+    # dr.set_flag(dr.JitFlag.SymbolicLoops, True)
+    return render_time
 
 
 
@@ -749,7 +772,7 @@ def render_image(scene : mi.Scene, expected_samples: int):
     
     
     
-    samples_per_pass = 16
+    samples_per_pass = 32
     
     num_passes = float(expected_samples // samples_per_pass)
     
@@ -934,35 +957,7 @@ def main():
     avg_pdf_loss = drad.Float32(0.0)
     
     
-    
-    # for epoch in range(epochs):
-    #     decoder_loss = train_decoder(
-    #         net, 
-    #         encoder_network, 
-    #         shading_frame_network, 
-    #         opt, 
-    #         weights, 
-    #         encoder_weights, 
-    #         shading_frame_weights,
-    #         scaler, 
-    #         mesh, 
-    #         _metal_tex, 
-    #         _rough_tex, 
-    #         _base_tex, 
-    #         _normal_tex, 
-    #         generator)
-        
-        
-    #     dr.backward(scaler.scale(decoder_loss))
-    #     scaler.step(opt)
-        
-    #     avg_loss += decoder_loss
-    #     if epoch != 0 and epoch % print_every == 0:
-    #         pbar.update(print_every)
-    #         pbar.set_postfix({'avg_loss': avg_loss / print_every, 'lr': opt.lr})
-    #         # loss_per_epoch[epoch // print_every - 1] = avg_loss / print_every
-    #         avg_loss = drad.Float32(0.0)
-    
+
     
     opt = Adam(
         lr=args.learning_rate
@@ -1060,142 +1055,7 @@ def main():
     # tex = mi.Bitmap(mi.Bitmap.PixelFormat.MultiChannel, mi.Struct.Type.Float16, (res, res))
 
     tex = latent_texture
-    # dr.enable_grad(tex)
-    
-    # texture_sample_size = args.texture_sample_size
-    # texture_epochs = args.texture_epochs
-    # pbar = tqdm.tqdm( desc="Texture Training Progress", unit="sample", total=texture_epochs)
-    # loss = drad.Float32(0.0)
-    
-    # dr.enable_grad(tex)
-    
-    # scaler1 = GradScaler()
-    # scaler2 = GradScaler()
-    # opt1 = Adam(
-    #     lr=args.learning_rate,
-    #     params={
-    #         'weights': drad.Float32(weights),
-    #         'shading_frame_weights': drad.Float32(shading_frame_weights),
-    #         'texture': drad.TensorXf16(tex)
-    #         }
-    #     )
-    # opt2 = Adam(
-    #     lr=args.learning_rate,
-    #     params={
-    #         'importance_weights': drad.Float32(importance_weights)
-    #         }
-    #     )
-    
-    # generator = dr.rng(seed=drad.UInt(42))
-    # # dr.disable_grad(weights)
-    # avg_texture_loss = drad.Float32(0.0)
-    # avg_importance_loss = drad.Float32(0.0)
-    # for epoch in range(texture_epochs):
-    #     i = dr.opaque(drad.Int,epoch)
-    #     lt = drad.Texture2f16(opt1["texture"])
-    #     texture_loss = train_decoder_and_texture(
-    #         net,
-    #         shading_frame_network,
-    #         opt1,
-    #         weights,
-    #         shading_frame_weights,
-    #         scaler,
-    #         mesh,
-    #         lt,
-    #         generator)
-    #     dr.backward(scaler1.scale(texture_loss))
-    #     scaler1.step(opt1)
-    #     # lt = drad.Texture2f16(opt1["texture"])
-    #     # importance_loss = train_sampler(
-    #     #     importance_net,
-    #     #     opt2, 
-    #     #     importance_weights, 
-    #     #     scaler, 
-    #     #     mesh, 
-    #     #     lt,
-    #     #     generator,
-    #     #     epoch)
-    #     # dr.backward(scaler2.scale(importance_loss))
-    #     # scaler2.step(opt2)'
-    #     avg_importance_loss += 0
-    #     avg_texture_loss += texture_loss
-    #     if i != 0 and i % print_every == 0:
-    #         pbar.update(print_every)
-    #         pbar.set_postfix({'texture loss': avg_texture_loss / print_every, 'importance loss': avg_importance_loss / print_every})
 
-    #         avg_texture_loss = drad.Float32(0.0)
-    #         avg_importance_loss = drad.Float32(0.0)
-
-
-    # importance_epochs = args.importance_epochs
-    # pbar = tqdm.tqdm( desc="Importance Sampling Progress", unit="sample", total=importance_epochs)
-    # loss = drad.Float32(0.0)
-    # lt = drad.Texture2f16(opt["texture"])
-
-    
-    
-    
-    # dr.disable_grad(weights)
-    # avg_pdf_loss = drad.Float32(0.0)
-    # for epoch in range(importance_epochs):
-    #     i = dr.opaque(drad.Int,epoch)
-    #     pdf_loss = train_sampler(
-    #         importance_net,
-    #         opt, 
-    #         importance_weights, 
-    #         scaler, 
-    #         mesh, 
-    #         lt,
-    #         generator,
-    #         epoch) 
-    #     avg_pdf_loss += pdf_loss
-    #     if i != 0 and i % print_every == 0:
-    #         pbar.update(print_every)
-    #         pbar.set_postfix({'Importance Sampling Loss': avg_pdf_loss / print_every})
-    #         # loss_per_epoch[i // print_every - 1] = avg_loss / print_every
-    #         avg_pdf_loss = drad.Float32(0.0)
-        # if i != 0 and i % render_every == 0:
-        #     neural_bsdf.add_model(net, encoder_network, shading_frame_network, importance_net)
-        #     scene_dict = {
-        #         'type': 'scene',
-        #         'integrator': {
-        #             'type': 'path'
-        #         },
-        #         'env': {
-        #             'type': 'constant',
-        #             'radiance': {'type': 'rgb', 'value': [1.0, 1.0, 1.0]}
-        #         },
-        #         'camera': {
-        #             'type': 'perspective',
-        #             'to_world': mi.ScalarTransform4f.look_at(
-        #                 origin=[0.2, 0.2, 0.2], target=[0, 0.1, 0], up=[0, 1, 0]
-        #             ),
-        #             'fov': 45,
-        #             'film': {
-        #                 'type': 'hdrfilm',
-        #                 'width': 800,
-        #                 'height': 800,
-        #                 'rfilter': {'type': 'box'}
-        #             }
-        #         },
-        #         'mesh': 
-        #     {
-        #             'type': 'obj',
-        #             'filename': OBJ,
-        #             'face_normals': True,
-        #             'bsdf': neural_bsdf
-        #         }
-        #     }
-            
-        #     s = mi.load_dict(scene_dict)
-        #     print("Rendering test image at epoch", i)
-        #     image = render_image(s, expected_samples=64)
-        #     if os.path.exists(args.output_folder) is False:
-        #         args.output_folder = "output"
-        #     if not os.path.exists(args.output_folder):
-        #         os.makedirs(args.output_folder, exist_ok=True)
-        #     mi.util.write_bitmap(args.output_folder + f'/render_epoch_{i}.png', image) 
-            
             
             
     def save_data():
@@ -1257,14 +1117,14 @@ def main():
         },
         'env': {
             'type': 'constant',
-            'radiance': {'type': 'rgb', 'value': [1.0, 1.0, 1.0]}
+            'radiance': {'type': 'rgb', 'value': [0.8, 0.8, 0.8]}
         },
 		'camera': {
 			'type': 'perspective',
 			'to_world': mi.ScalarTransform4f.look_at(
 				origin=[0.2, 0.2, 0.2], target=[0, 0.1, 0], up=[0, 1, 0]
 			),
-			'fov': 45,
+			'fov': 30,
 			'film': {
 				'type': 'hdrfilm',
 				'width': 1024,
@@ -1289,8 +1149,15 @@ def main():
     else:
         expected_samples = 256
     
-    image = render_image(s, expected_samples=expected_samples)
+    image = render_image(s, expected_samples=32)
     
+
+    if args.benchmark:
+        num_runs = 5
+        time = 0.0
+        for _ in range(num_runs):
+            time += benchmark(s, expected_samples=64)
+        print(f"Benchmark render time for 64 samples: {time/num_runs:.2f} seconds")
     print("Neural BSDF loaded.")
     print(neural_bsdf)
 

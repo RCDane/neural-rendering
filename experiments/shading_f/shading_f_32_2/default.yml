@@ -11,7 +11,7 @@ render_every: 100000
 print_every: 1000
 use_decoder: true
 use_encoder: true
-use_shading_frame: false
+use_shading_frame: true
 use_importance_sampling: false
 use_texture: false
 render_samples: 2048
@@ -31,6 +31,8 @@ networks:
   bsdf:
     layers:
       - Linear: [14, 32]
+      - ReLU: []
+      - Linear: [32, 32]
       - ReLU: []
       - Linear: [32, 3]
       - Exp: []

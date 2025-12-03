@@ -32,20 +32,20 @@ networks:
       - Linear: [8, 12]
   bsdf:
     layers:
-      - Linear: [14, 64]
+      - Linear: [14, 32]
       - ReLU: []
-      - Linear: [64, 64]
+      - Linear: [32, 32]
       - ReLU: []
-      - Linear: [64, 64]
+      - Linear: [32, 32]
       - ReLU: []
-      - Linear: [64, 3]
+      - Linear: [32, 3]
       - Exp: []
   importance_sampler:
     layers:
-      - Linear: [11, 64]
+      - Linear: [11, 32]
       - ReLU: []
-      - Linear: [64, 64]
+      - Linear: [32, 32]
       - ReLU: []
-      - Linear: [64, 64]
+      - Linear: [32, 32]
       - ReLU: []
-      - Linear: [64, 9]
+      - Linear: [32, 9]

@@ -1,7 +1,7 @@
 run_name: default_experiment
 batch_size: 5000
 importance_epochs: 20000
-decoder_epochs: 250000
+decoder_epochs: 500000
 texture_epochs: 30000
 learning_rate: 0.001
 weight_decay: 1e-6
@@ -32,12 +32,14 @@ networks:
     layers:
       - Linear: [14, 32]
       - ReLU: []
+      - Linear: [32, 32]
+      - ReLU: []
+      - Linear: [32, 32]
+      - ReLU: []
       - Linear: [32, 3]
       - Exp: []
   importance_sampler:
     layers:
       - Linear: [11, 32]
-      - ReLU: []
-      - Linear: [32, 32]
       - ReLU: []
       - Linear: [32, 9]

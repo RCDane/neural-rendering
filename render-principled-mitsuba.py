@@ -1,5 +1,5 @@
 import mitsuba as mi
-
+import drjit as dr
 
 obj_file = "data/lubricant_spray_1k.obj"
 texture_folder = "data/textures/"
@@ -10,18 +10,18 @@ scene = mi.load_dict({
 
         'env': {
             'type': 'constant',
-            'radiance': {'type': 'rgb', 'value': [1.0, 1.0, 1.0]}
+            'radiance': {'type': 'rgb', 'value': [0.8, 0.8, 0.8]}
         },
 		'camera': {
 			'type': 'perspective',
 			'to_world': mi.ScalarTransform4f.look_at(
 				origin=[0.2, 0.2, 0.2], target=[0, 0.1, 0], up=[0, 1, 0]
 			),
-			'fov': 45,
+			'fov': 30.0,
 			'film': {
 				'type': 'hdrfilm',
-				'width': 400,
-				'height': 400,
+				'width': 1024,
+				'height': 1024,
 				'rfilter': {'type': 'box'}
 			}
 		},
@@ -68,8 +68,17 @@ scene = mi.load_dict({
 })
 
 integrator = mi.load_dict({ 'type': 'path' })
+dr.set_flag(dr.JitFlag.SymbolicCalls, False)
+dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
+dr.set_flag(dr.JitFlag.SymbolicLoops, False)
+import time
+img = mi.render(scene, spp=64, integrator=integrator)
 
 
-img = mi.render(scene, spp=512, integrator=integrator)
-mi.util.write_bitmap('render1.exr', img)
-mi.util.write_bitmap('render1.png', img)  # quick LDR preview
+start_time = time.time()
+
+img = mi.render(scene, spp=64, integrator=integrator)
+end_time = time.time()
+print(f"Render time for 64 samples: {end_time - start_time:.2f} seconds")
+mi.util.write_bitmap('render2.exr', img)
+mi.util.write_bitmap('render2.png', img)  # quick LDR preview
