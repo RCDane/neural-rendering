@@ -3,7 +3,7 @@ import drjit as dr
 
 obj_file = "data/lubricant_spray_1k.obj"
 texture_folder = "data/textures/"
-mi.set_variant('llvm_ad_rgb')  # CPU variant - more stable
+mi.set_variant('cuda_ad_rgb')  # CPU variant - more stable
 
 scene = mi.load_dict({
     'type': 'scene',
@@ -56,12 +56,6 @@ scene = mi.load_dict({
                     'filename': texture_folder+'lubricant_spray_rough_1k.exr',
                     'raw': True
                 },
-                # Optional tweaks:
-                # 'specular': 0.5,
-                # 'spec_tint': 0.0,
-                # 'clearcoat': 0.0,
-                # 'clearcoat_roughness': 0.03,
-                # 'anisotropic': 0.0,
             }
         }
     }
@@ -72,12 +66,13 @@ dr.set_flag(dr.JitFlag.SymbolicCalls, False)
 dr.set_flag(dr.JitFlag.SymbolicConditionals, False)
 dr.set_flag(dr.JitFlag.SymbolicLoops, False)
 import time
-img = mi.render(scene, spp=64, integrator=integrator)
-
+img = mi.render(scene, spp=32, integrator=integrator)
+dr.sync_thread()
 
 start_time = time.time()
 
-img = mi.render(scene, spp=64, integrator=integrator)
+img = mi.render(scene, spp=32, integrator=integrator)
+dr.sync_thread()
 end_time = time.time()
 print(f"Render time for 64 samples: {end_time - start_time:.2f} seconds")
 mi.util.write_bitmap('render2.exr', img)
